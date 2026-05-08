@@ -2663,6 +2663,13 @@ function renderNewDraftRound(roundPicks, userMap, playerMap, roundColor) {
         <div style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;background:${roundColor};color:white;border-radius:50%;font-weight:700;font-size:14px;margin-right:12px;">
           ${roundPick}
         </div>
+        ${!isDraftOrder && pick.player_id ? `
+          <div style="width:40px;height:40px;border-radius:50%;margin-right:12px;overflow:hidden;flex-shrink:0;">
+            <img src="${playerThumbUrl(pick.player_id)}" 
+                 style="width:100%;height:100%;object-fit:cover;" 
+                 onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIGZpbGw9IiNlZGVkZWQiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5QPC90ZXh0Pjwvc3ZnPg=='" />
+          </div>
+        ` : ''}
         <div style="flex:1;">
           <div style="font-weight:600;color:var(--text);font-size:14px;">
             ${isDraftOrder ? 'Draft Pick' : playerName}
