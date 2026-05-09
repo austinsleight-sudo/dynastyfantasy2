@@ -292,7 +292,7 @@ td{padding:12px 16px;font-size:15px;vertical-align:middle;}
       </div>
       <!-- FAAB leaderboard -->
       <div id="waiver-faab-section" style="margin-bottom:28px;display:none;">
-        <span class="section-label">FAAB remaining — live (2026)</span>
+        <span class="section-label">FAAB remaining — $100 budget (2026)</span>
         <div id="faab-remaining-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:28px;"></div>
         <span class="section-label">FAAB spent by team — all time</span>
         <div id="faab-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:28px;"></div>
@@ -4362,13 +4362,16 @@ async function initWaivers(){
     const faabSpentCurrentSeason={};
     faabByPlayer={};
     const currentSeason = ALL_LEAGUE_IDS[0]?.season || '2026';
-    allWaivers.forEach(tx=>{
-      if(tx.type!=='waiver') return;
+    
+    allWaivers.forEach(tx => {
+      // Process both waiver and free_agent transactions for FAAB
+      if(!['waiver','free_agent'].includes(tx.type)) return;
       const bid=tx.settings?.waiver_bid||0;
       if(bid<=0) return;
       const rid=tx.roster_ids?.[0];
       if(!rid) return;
       const name=rosterMap[rid]||`Roster ${rid}`;
+      
       faabByTeam[name]=(faabByTeam[name]||0)+bid;
       if(String(tx.season)===String(currentSeason)){
         faabSpentCurrentSeason[name]=(faabSpentCurrentSeason[name]||0)+bid;
@@ -4404,6 +4407,25 @@ async function initWaivers(){
 function renderFaabGrid(faabByTeam){
   const sorted=Object.entries(faabByTeam).sort((a,b)=>b[1]-a[1]);
   const max=sorted[0]?.[1]||1;
+  console.log('FAAB Grid Data:', {sorted, max, teamCount: sorted.length});
+    
+    // Debug: Show all transactions for top spending teams
+    const topTeams = sorted.slice(0, 3);
+    topTeams.forEach(([teamName, total]) => {
+      const teamTransactions = allWaivers.filter(tx => 
+        ['waiver','free_agent'].includes(tx.type) && 
+        rosterMap[tx.roster_ids?.[0]] === teamName
+      );
+      console.log(`${teamName} transactions:`, {
+        count: teamTransactions.length,
+        totalSpent: total,
+        transactions: teamTransactions.slice(0, 3).map(tx => ({
+          type: tx.type,
+          bid: tx.settings?.waiver_bid || 0,
+          season: tx.season
+        }))
+      });
+    });
   document.getElementById('faab-grid').innerHTML=sorted.map(([name,total])=>{
     const pct=Math.round((total/max)*100);
     return`<div class="metric" style="cursor:default">
@@ -4416,6 +4438,17 @@ function renderFaabGrid(faabByTeam){
 
 function renderFaabRemainingGrid(faabSpentCurrentSeason, startingBudget=100, seasonLabel='2026'){
   const teams=[...new Set(Object.values(rosterMap))].sort();
+  
+  // Debug budget calculation for austinsleight
+  const yourTeamName = 'austinsleight';
+  const yourSpent = faabSpentCurrentSeason[yourTeamName] || 0;
+  const yourRemaining = startingBudget - yourSpent;
+  console.log(`Budget Debug for ${yourTeamName}:`, {
+    spent: yourSpent,
+    remaining: yourRemaining,
+    startingBudget
+  });
+  
   const rows=teams.map(name=>{
     const spent=faabSpentCurrentSeason[name]||0;
     const remaining=startingBudget-spent;
