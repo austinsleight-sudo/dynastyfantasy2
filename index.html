@@ -139,56 +139,73 @@ td{padding:12px 16px;font-size:15px;vertical-align:middle;}
   td{font-size:16px;}
 }
 @media(max-width:600px){
-  .wrap{padding:0 12px 36px;}
-  .nav-tab{padding:0 14px;font-size:12px;}
+  .wrap{padding:0 8px 20px !important;}
+  .nav-tab{padding:0 8px !important;font-size:11px !important;}
   
   /* Team Rosters Mobile */
-  #team-roster-layout{grid-template-columns:1fr !important;gap:12px !important;}
-  #team-roster-layout .metric{padding:12px !important;}
-  .player-card{flex-direction:column;text-align:center;padding:12px !important;}
-  .player-card .player-info{margin-left:0;margin-top:8px;}
+  #team-roster-layout{grid-template-columns:1fr !important;gap:8px !important;}
+  #team-roster-layout .metric{padding:8px !important;}
+  .player-card{flex-direction:column;text-align:center;padding:8px !important;}
+  .player-card .player-info{margin-left:0;margin-top:4px;}
   
   /* Taxi Squad Mobile */
-  .taxi-squad-grid{grid-template-columns:1fr !important;gap:8px !important;}
-  .taxi-player-card{padding:8px !important;}
+  .taxi-squad-grid{grid-template-columns:1fr !important;gap:6px !important;}
+  .taxi-player-card{padding:6px !important;}
   
   /* Trade History Mobile */
   .trade-body{flex-direction:column;}
-  .trade-leg{border-right:none;border-bottom:1px solid var(--border);min-width:100% !important;}
+  .trade-leg{border-right:none;border-bottom:1px solid var(--border);min-width:100% !important;padding:8px !important;}
   .trade-leg:last-child{border-bottom:none;}
-  .trade-assets{grid-template-columns:1fr !important;gap:8px !important;}
-  .trade-asset{padding:8px !important;}
+  .trade-assets{grid-template-columns:1fr !important;gap:4px !important;}
+  .trade-asset{padding:4px !important;}
   .trade-card{overflow-x:hidden !important;}
+  .trade-header{padding:6px 8px !important;}
+  .trade-item{font-size:12px !important;}
   
   /* Rookie Draft Mobile */
-  #rookie-draft-wrap{min-height:50vh !important;overflow-x:hidden !important;}
-  #rookie-draft-wrap>div{grid-template-columns:1fr !important;gap:8px !important;}
-  .draft-round{padding:8px !important;}
-  .draft-pick{flex-direction:column;text-align:center;padding:8px !important;min-width:0 !important;}
-  .draft-pick>div:last-child{margin-left:0;margin-top:8px;min-width:0 !important;}
+  #rookie-draft-wrap{min-height:40vh !important;overflow-x:hidden !important;}
+  #rookie-draft-wrap>div{grid-template-columns:1fr !important;gap:6px !important;}
+  .draft-round{padding:6px !important;}
+  .draft-pick{flex-direction:column;text-align:center;padding:6px !important;min-width:0 !important;}
+  .draft-pick>div:last-child{margin-left:0;margin-top:4px;min-width:0 !important;}
   .draft-pick .player-info{min-width:0 !important;}
+  .draft-pick .player-info-name{font-size:12px !important;}
+  .draft-pick .player-info-sub{font-size:10px !important;}
   
   /* Draft Picks Mobile */
-  #picks-wrap{grid-template-columns:1fr !important;gap:8px !important;overflow-x:hidden !important;}
-  .pick-card{padding:8px !important;min-width:0 !important;}
+  #picks-wrap{grid-template-columns:1fr !important;gap:6px !important;overflow-x:hidden !important;}
+  .pick-card{padding:6px !important;min-width:0 !important;}
   .table-wrap{overflow-x:auto !important;max-width:100% !important;}
-  table{min-width:600px !important;}
+  table{min-width:500px !important;font-size:12px !important;}
+  th{padding:6px 8px !important;font-size:10px !important;}
+  td{padding:6px 8px !important;font-size:11px !important;}
   
   /* Trade Timeline Mobile */
   .timeline-item{flex-direction:column !important;}
-  .timeline-content{margin-left:0 !important;margin-top:8px !important;}
-  .timeline-date{font-size:12px !important;}
+  .timeline-content{margin-left:0 !important;margin-top:6px !important;}
+  .timeline-date{font-size:10px !important;}
   .timeline-wrap{overflow-x:hidden !important;}
   
   /* General mobile improvements */
-  .section-label{font-size:14px !important;}
-  .metric{padding:12px !important;}
-  .metric-value{font-size:20px !important;}
+  .section-label{font-size:12px !important;margin-bottom:8px !important;}
+  .metric{padding:8px !important;}
+  .metric-value{font-size:16px !important;}
+  .metric-label{font-size:10px !important;}
+  .controls{gap:4px !important;}
+  .pos-btn{height:28px !important;padding:0 8px !important;font-size:11px !important;}
+  .team-filter-btn{height:28px !important;padding:0 8px !important;font-size:11px !important;}
   
   /* Prevent horizontal scrolling */
   body{overflow-x:hidden !important;}
-  .wrap{overflow-x:hidden !important;}
+  .wrap{overflow-x:hidden !important;max-width:100% !important;}
   *{box-sizing:border-box !important;}
+  
+  /* Reduce all font sizes */
+  h1{font-size:28px !important;}
+  .logo h1{font-size:clamp(24px,4vw,32px) !important;}
+  .player-name{font-size:14px !important;}
+  .player-info-sub{font-size:10px !important;}
+  .footer-note{font-size:10px !important;}
 }
 
 @media(max-width:900px) and (min-width:601px){
