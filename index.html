@@ -1800,6 +1800,11 @@ function setTradeType(type){
   renderTrades();
 }
 function setTradeAsset(v){activeTradeAsset=v;renderTrades();}
+
+function searchTradesByPlayer(searchTerm){
+  activePlayerSearch=searchTerm.toLowerCase().trim();
+  renderTrades();
+}
 function setTradePartnerTeam(team){
   activeTradePartnerTeam=team||'ALL';
   renderTradePartners();
