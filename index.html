@@ -422,7 +422,7 @@ td{padding:12px 16px;font-size:15px;vertical-align:middle;}
         </div>
         <div id="trade-wire-filter-controls" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
           <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">Search</span>
-          <input type="text" id="trade-player-search" placeholder="Player name..." style="padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg3);color:var(--text);font-size:11px;width:150px;" oninput="searchTradesByPlayer(this.value)">
+          <input type="text" id="trade-player-search" placeholder="Player name..." style="padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg3);color:var(--text);font-size:11px;width:150px;">
           <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">Team</span>
           <select id="trade-team-filter" onchange="setTradeTeam(this.value)">
             <option value="ALL">Any team</option>
@@ -1805,6 +1805,16 @@ function searchTradesByPlayer(searchTerm){
   activePlayerSearch=searchTerm.toLowerCase().trim();
   renderTrades();
 }
+
+// Add event listener for search input
+document.addEventListener('DOMContentLoaded', function() {
+  const searchInput = document.getElementById('trade-player-search');
+  if (searchInput) {
+    searchInput.addEventListener('input', function(e) {
+      searchTradesByPlayer(e.target.value);
+    });
+  }
+});
 function setTradePartnerTeam(team){
   activeTradePartnerTeam=team||'ALL';
   renderTradePartners();
