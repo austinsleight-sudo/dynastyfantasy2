@@ -421,12 +421,10 @@ td{padding:12px 16px;font-size:15px;vertical-align:middle;}
           </div>
         </div>
         <div id="trade-wire-filter-controls" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
-          <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">Team 1</span>
-          <select id="trade-team-a" onchange="setTradeHeadToHead('a', this.value)">
-            <option value="ALL">Any team</option>
-          </select>
-          <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">Team 2</span>
-          <select id="trade-team-b" onchange="setTradeHeadToHead('b', this.value)">
+          <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">Search</span>
+          <input type="text" id="trade-player-search" placeholder="Player name..." style="padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg3);color:var(--text);font-size:11px;width:150px;" oninput="searchTradesByPlayer(this.value)">
+          <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">Team</span>
+          <select id="trade-team-filter" onchange="setTradeTeam(this.value)">
             <option value="ALL">Any team</option>
           </select>
           <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">Season</span>
@@ -1655,7 +1653,7 @@ function renderTeamRosterView(){
 /* ══════════════════════════════════════════════════════════
    TRADE LOGIC
 ══════════════════════════════════════════════════════════ */
-let allTrades=[], rosterMap={}, userMap={}, playerMap={}, avatarMap={}, activeTeamFilter='ALL', activeTradeTeamA='ALL', activeTradeTeamB='ALL', activeTradeSeason='ALL', activeTradeType='ALL', activeTradeAsset='ALL', activeTradePartnerTeam='ALL', activeTradeSubTab='single', tradesLoaded=false;
+let allTrades=[], rosterMap={}, userMap={}, playerMap={}, avatarMap={}, activeTeamFilter='ALL', activeTradeTeamA='ALL', activeTradeTeamB='ALL', activeTradeSeason='ALL', activeTradeType='ALL', activeTradeAsset='ALL', activeTradePartnerTeam='ALL', activeTradeSubTab='single', tradesLoaded=false, activePlayerSearch='';
 let activeWaiverSubTab='activity', activeAgeSubTab='curves', activePicksSeason='ALL';
 let activeTradePageSize='25', tradeVisibleCount=25, activeWaiverPageSize='25', waiverVisibleCount=25;
 
@@ -1801,11 +1799,7 @@ function setTradeType(type){
   resetTradePagination();
   renderTrades();
 }
-function setTradeAsset(asset){
-  activeTradeAsset=asset||'ALL';
-  resetTradePagination();
-  renderTrades();
-}
+function setTradeAsset(v){activeTradeAsset=v;renderTrades();}
 function setTradePartnerTeam(team){
   activeTradePartnerTeam=team||'ALL';
   renderTradePartners();
@@ -1975,6 +1969,21 @@ function renderTrades(){
       if(activeTradeAsset==='picks') return hasPicks&&!hasPlayers;
       if(activeTradeAsset==='mixed') return hasPlayers&&hasPicks;
       return true;
+    });
+  }
+
+  // Player search filter
+  if(activePlayerSearch){
+    trades=trades.filter(t=>{
+      const allPlayerIds=[...Object.keys(t.adds||{}),...Object.keys(t.drops||{})];
+      return allPlayerIds.some(pid=>{
+        const player=playerMap[pid];
+        return player && (
+          (player.full_name||'').toLowerCase().includes(activePlayerSearch) ||
+          (player.first_name||'').toLowerCase().includes(activePlayerSearch) ||
+          (player.last_name||'').toLowerCase().includes(activePlayerSearch)
+        );
+      });
     });
   }
 
