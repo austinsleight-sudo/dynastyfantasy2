@@ -3294,19 +3294,41 @@ function displayRookieDraftResults(picks, userMap, playerMap, year, statusEl, wr
    getTeamColor(name) is the single entry-point used everywhere.
 ─────────────────────────────────────────────────────────── */
 const TEAM_PALETTE = [
-  '#00ff87', // neon green  (theme accent)
+  '#00ff87', // neon green
+  '#ff5757', // vivid red
   '#4da6ff', // sky blue
   '#ffb347', // warm orange
-  '#b388ff', // soft purple
-  '#ff6b6b', // coral red
-  '#2ec4b6', // teal
-  '#f9c74f', // golden yellow
-  '#ff9f1c', // amber
-  '#90be6d', // sage green
-  '#c77dff', // violet
-  '#4cc9f0', // cyan
-  '#f72585', // hot pink
+  '#d966ff', // electric purple
+  '#00e5cc', // bright teal
+  '#ffe94d', // electric yellow
+  '#ff6eb4', // hot pink
+  '#5effa0', // mint green
+  '#ff9040', // deep amber
+  '#38cfff', // cyan blue
+  '#ff4f81', // rose red
+  '#a8ff3e', // lime
+  '#9b8fff', // lavender blue
+  '#ffda6a', // gold
+  '#00cfb4', // seafoam
+  '#ff7eb3', // bubblegum
+  '#6eb5ff', // periwinkle
+  '#ff6040', // tomato
+  '#b8ff57', // yellow-green
 ];
+// Maps friendly/display team names → Sleeper username so getTeamColor()
+// resolves to the same palette slot regardless of which tab is calling.
+const FRIENDLY_TO_SLEEPER = {
+  'The Schedule':          'rennobhtes',
+  'Memphis Mad Dogs':      'dilhal13',
+  'Geriatric Nutsacks':    'mvanya',
+  'Seanysleepers':         'seanysleepers',
+  'Team Zesty Boys':       'austinsleight',
+  'Nebraska NastyBoys':    'TotiTurbo',
+  'Texas LoneStars':       'JaredEaken',
+  'Beast Infection':       'jacksonhendrich',
+  'Burrow my \u{1F351} in TDs': 'walkup45',
+  'The Young Love Affair': 'MontanaMorgan',
+};
 let teamColorMap = {};
 function buildTeamColorMap() {
   teamColorMap = {};
@@ -3318,10 +3340,12 @@ function getTeamColor(name) {
   if (!name) return '#888';
   // Lazily build map the first time it's needed
   if (Object.keys(teamColorMap).length === 0 && Object.keys(rosterMap).length > 0) buildTeamColorMap();
-  if (teamColorMap[name]) return teamColorMap[name];
+  // Resolve friendly name → Sleeper username so standings/draft names match live tabs
+  const resolved = FRIENDLY_TO_SLEEPER[name] || name;
+  if (teamColorMap[resolved]) return teamColorMap[resolved];
   // Fallback: deterministic hash so unknown names are always the same colour
   let h = 0;
-  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+  for (let i = 0; i < resolved.length; i++) h = resolved.charCodeAt(i) + ((h << 5) - h);
   return TEAM_PALETTE[Math.abs(h) % TEAM_PALETTE.length];
 }
 
