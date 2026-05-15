@@ -114,7 +114,7 @@ td{padding:12px 16px;font-size:15px;vertical-align:middle;}
 .trade-leg:last-child{border-right:none;}
 .trade-leg-team{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
 .trade-leg-team-avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;background:var(--bg3);border:1px solid var(--border);flex-shrink:0;}
-.trade-leg-team-name{font-family:'DM Mono',monospace;font-size:12px;color:var(--green);letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.trade-leg-team-name{font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .trade-leg-label{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;margin-top:8px;}
 .trade-leg-label:first-of-type{margin-top:0;}
 .trade-item{font-size:14px;padding:3px 0;color:var(--text);display:flex;align-items:center;gap:8px;}
@@ -178,8 +178,12 @@ td{padding:12px 16px;font-size:15px;vertical-align:middle;}
   body .draft-pick .player-info{min-width:0 !important;}
   body .draft-pick .player-info-name{font-size:11px !important;}
   body .draft-pick .player-info-sub{font-size:9px !important;}
-  body .draft-pick-team{max-width:72px !important;overflow:hidden !important;}
-  body .draft-pick-team div{font-size:10px !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;}
+  /* Rookie draft card — compact on mobile */
+  body .draft-pick-card{padding:6px 8px !important;}
+  body .pick-num-circle{width:28px !important;height:28px !important;font-size:11px !important;margin-right:8px !important;}
+  body .pick-player-thumb{width:28px !important;height:28px !important;margin-right:8px !important;}
+  body .draft-pick-card .pick-player-name{font-size:11px !important;}
+  body .pick-owner-name{font-size:10px !important;}
   
   /* Draft Picks Mobile - force single column, inner table scrolls */
   body #picks-wrap{grid-template-columns:1fr !important;gap:4px !important;overflow-x:visible !important;width:100% !important;}
@@ -192,15 +196,22 @@ td{padding:12px 16px;font-size:15px;vertical-align:middle;}
   body th{padding:4px 6px !important;font-size:9px !important;white-space:nowrap !important;}
   body td{padding:4px 6px !important;font-size:9px !important;}
 
-  /* Waivers mobile: hide FAAB + Type columns (available in FAAB Summary tab) */
-  body #panel-waivers table th:nth-child(5),body #panel-waivers table td:nth-child(5),
-  body #panel-waivers table th:nth-child(6),body #panel-waivers table td:nth-child(6){display:none !important;}
-  /* Hide avatars in team + player cells to reduce width */
-  body #panel-waivers table td img{display:none !important;}
-  body #panel-waivers table td div[style*="display:flex"]{gap:0 !important;}
-  /* Compact player name lines */
-  body #panel-waivers table td div div{font-size:9px !important;line-height:1.2 !important;}
-  body #panel-waivers table td:first-child{font-size:9px !important;white-space:nowrap !important;}
+  /* Waivers mobile: all 6 columns visible, ultra-compact */
+  /* Tightest padding + font for waiver table */
+  body #panel-waivers table,body #panel-waivers table th,body #panel-waivers table td{font-size:8px !important;padding:3px 3px !important;}
+  /* Override inline font-sizes inside player name/pos divs */
+  body #panel-waivers table td div{font-size:8px !important;line-height:1.3 !important;}
+  body #panel-waivers table td span{font-size:8px !important;}
+  /* Narrow the badge padding */
+  body #panel-waivers table td:nth-child(6) span{padding:1px 3px !important;}
+  /* Pin column widths so 6 cols fit ~380px */
+  body #panel-waivers table{table-layout:fixed !important;width:100% !important;}
+  body #panel-waivers table th:nth-child(1),body #panel-waivers table td:nth-child(1){width:58px !important;white-space:nowrap !important;}
+  body #panel-waivers table th:nth-child(2),body #panel-waivers table td:nth-child(2){width:64px !important;overflow:hidden !important;text-overflow:ellipsis !important;}
+  body #panel-waivers table th:nth-child(3),body #panel-waivers table td:nth-child(3){width:80px !important;word-break:break-word !important;}
+  body #panel-waivers table th:nth-child(4),body #panel-waivers table td:nth-child(4){width:80px !important;word-break:break-word !important;}
+  body #panel-waivers table th:nth-child(5),body #panel-waivers table td:nth-child(5){width:30px !important;text-align:center !important;}
+  body #panel-waivers table th:nth-child(6),body #panel-waivers table td:nth-child(6){width:48px !important;text-align:center !important;}
   
   /* Trade Timeline Mobile — contain the canvas inside a scrollable box */
   body #timeline-wrap{width:100% !important;max-width:100% !important;overflow-x:scroll !important;-webkit-overflow-scrolling:touch !important;touch-action:pan-x !important;}
@@ -254,7 +265,7 @@ td{padding:12px 16px;font-size:15px;vertical-align:middle;}
   body #records-wrap{grid-template-columns:1fr !important;}
   body #records-wrap > div[style*="grid-column"]{margin-top:12px !important;}
 
-  /* Top Starters card */
+  /* Most Starts card */
   body .top-starters-card{padding:10px !important;}
 }
 
@@ -2067,7 +2078,7 @@ async function buildStartsMap() {
 function renderTopStarts(teamName) {
   if (!startsMapCache) {
     return `<div class="metric" style="padding:14px 16px;">
-      <div class="metric-label" style="font-size:13px;margin-bottom:8px;">Top Starters</div>
+      <div class="metric-label" style="font-size:13px;margin-bottom:8px;">Most Starts</div>
       <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">Loading starts data…</div>
     </div>`;
   }
@@ -2079,7 +2090,7 @@ function renderTopStarts(teamName) {
 
   if (!sorted.length) {
     return `<div class="metric" style="padding:14px 16px;">
-      <div class="metric-label" style="font-size:13px;margin-bottom:8px;">Top Starters</div>
+      <div class="metric-label" style="font-size:13px;margin-bottom:8px;">Most Starts</div>
       <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">No starts data found.</div>
     </div>`;
   }
@@ -2108,7 +2119,7 @@ function renderTopStarts(teamName) {
   }).join('');
 
   return `<div class="metric" style="padding:14px 16px;">
-    <div class="metric-label" style="font-size:13px;margin-bottom:10px;">Top Starters All-Time</div>
+    <div class="metric-label" style="font-size:13px;margin-bottom:10px;">Most Starts All-Time</div>
     ${rows}
   </div>`;
 }
@@ -2877,7 +2888,7 @@ function buildTradeCard(t){
     const recHtml=recAll.length?`<div class="trade-leg-label">Received</div>${recAll.join('')}`:'';
     const sentHtml=sentAll.length?`<div class="trade-leg-label">Sent</div>${sentAll.join('')}`:'';
     const avatarHtml=avatarUrl?`<img class="trade-leg-team-avatar" src="${avatarUrl}" onerror="this.style.display='none'" alt="${teamName}">`:`<div class="trade-leg-team-avatar" style="display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:11px;color:var(--green)">${teamName[0]||'?'}</div>`;
-    return`<div class="trade-leg"><div class="trade-leg-team">${avatarHtml}<span class="trade-leg-team-name">${teamName}</span></div>${recHtml}${sentHtml}</div>`;
+    return`<div class="trade-leg"><div class="trade-leg-team">${avatarHtml}<span class="trade-leg-team-name" style="color:${getTeamColor(teamName)}">${teamName}</span></div>${recHtml}${sentHtml}</div>`;
   }).join('');
 
   return`<div class="trade-card fade-in" style="margin-bottom:10px">
@@ -3276,116 +3287,42 @@ function displayRookieDraftResults(picks, userMap, playerMap, year, statusEl, wr
   wrapEl.innerHTML = html;
 }
 
-// Global object to track used colors
-const usedColors = {};
-
-function getTeamColor(teamName) {
-  const teamColors = {
-    // Exact matches from API - using diverse colors
-    'Team Zesty Boys': '#E74C3C', // Red
-    'The Schedule': '#3498DB', // Blue
-    'Texas LoneStars': '#F39C12', // Orange
-    'Memphis Mad Dogs': '#27AE60', // Green
-    'Seanysleepers': '#8E44AD', // Purple
-    'Beast Infection': '#E67E22', // Dark Orange
-    'Nebraska NastyBoys': '#16A085', // Teal
-    'Geriatric Nutsacks': '#D35400', // Dark Orange Red
-    'Burrow my in TDs': '#2980B9', // Dark Blue
-    'The Young Love Affair': '#C0392B', // Dark Red
-    // Common variations and partial matches
-    'Zesty Boys': '#E74C3C',
-    'Schedule': '#3498DB',
-    'LoneStars': '#F39C12',
-    'Mad Dogs': '#27AE60',
-    'Seanysleeper': '#8E44AD',
-    'Beast': '#E67E22',
-    'NastyBoys': '#16A085',
-    'Nutsacks': '#D35400',
-    'Burrow': '#2980B9',
-    'Young Love': '#C0392B'
-  };
-  
-  // Try exact match first
-  if (teamColors[teamName]) {
-    const color = teamColors[teamName];
-    usedColors[teamName] = color;
-    return color;
-  }
-  
-  // Try partial match
-  for (const [key, color] of Object.entries(teamColors)) {
-    if (teamName.toLowerCase().includes(key.toLowerCase())) {
-      usedColors[teamName] = color;
-      return color;
-    }
-  }
-  
-  // Check if we already assigned a color to this team
-  if (usedColors[teamName]) {
-    return usedColors[teamName];
-  }
-  
-  // Available colors palette - all unique
-  const availableColors = [
-    '#E74C3C', // Red
-    '#3498DB', // Blue
-    '#F39C12', // Orange
-    '#27AE60', // Green
-    '#34495E', // Dark Blue Gray
-    '#E67E22', // Dark Orange
-    '#16A085', // Teal
-    '#2980B9', // Dark Blue
-    '#2ECC71', // Bright Green
-    '#D35400', // Dark Orange Red
-    '#C0392B', // Dark Red
-    '#7F8C8D', // Gray
-    '#95A5A6', // Light Gray
-    '#9B59B6', // Purple
-    '#1ABC9C', // Turquoise
-    '#34495E', // Navy
-    '#E67E22', // Carrot
-    '#95A5A6', // Silver
-    '#D35400', // Pumpkin
-    '#BDC3C7'  // Silver Light
-  ];
-  
-  // Find colors that haven't been used yet
-  const usedColorValues = Object.values(usedColors);
-  const unusedColors = availableColors.filter(color => !usedColorValues.includes(color));
-  
-  // If we have unused colors, use the first one
-  if (unusedColors.length > 0) {
-    const selectedColor = unusedColors[0];
-    usedColors[teamName] = selectedColor;
-    return selectedColor;
-  }
-  
-  // If all colors are used, generate a unique color based on hash
-  let hash = 0;
-  for (let i = 0; i < teamName.length; i++) {
-    hash = teamName.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  
-  // Use hash to select from full palette but ensure uniqueness
-  const hashColor = availableColors[Math.abs(hash) % availableColors.length];
-  
-  // If hash color is already used, find next available
-  if (!usedColorValues.includes(hashColor)) {
-    usedColors[teamName] = hashColor;
-    return hashColor;
-  }
-  
-  // Find first available color as final fallback
-  for (const color of availableColors) {
-    if (!usedColorValues.includes(color)) {
-      usedColors[teamName] = color;
-      return color;
-    }
-  }
-  
-  // Last resort - return a default unused color
-  usedColors[teamName] = '#888888';
-  return '#888888';
+/* ── TEAM COLOUR SYSTEM ──────────────────────────────────
+   12 distinct colours that all read well on the dark theme.
+   After rosterMap is built, buildTeamColorMap() assigns each
+   team a unique slot keyed by roster_id (stable across loads).
+   getTeamColor(name) is the single entry-point used everywhere.
+─────────────────────────────────────────────────────────── */
+const TEAM_PALETTE = [
+  '#00ff87', // neon green  (theme accent)
+  '#4da6ff', // sky blue
+  '#ffb347', // warm orange
+  '#b388ff', // soft purple
+  '#ff6b6b', // coral red
+  '#2ec4b6', // teal
+  '#f9c74f', // golden yellow
+  '#ff9f1c', // amber
+  '#90be6d', // sage green
+  '#c77dff', // violet
+  '#4cc9f0', // cyan
+  '#f72585', // hot pink
+];
+let teamColorMap = {};
+function buildTeamColorMap() {
+  teamColorMap = {};
+  Object.entries(rosterMap)
+    .sort((a, b) => Number(a[0]) - Number(b[0]))
+    .forEach(([, name], i) => { teamColorMap[name] = TEAM_PALETTE[i % TEAM_PALETTE.length]; });
+}
+function getTeamColor(name) {
+  if (!name) return '#888';
+  // Lazily build map the first time it's needed
+  if (Object.keys(teamColorMap).length === 0 && Object.keys(rosterMap).length > 0) buildTeamColorMap();
+  if (teamColorMap[name]) return teamColorMap[name];
+  // Fallback: deterministic hash so unknown names are always the same colour
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+  return TEAM_PALETTE[Math.abs(h) % TEAM_PALETTE.length];
 }
 
 function renderNewDraftRound(roundPicks, userMap, playerMap, roundColor) {
@@ -3408,30 +3345,28 @@ function renderNewDraftRound(roundPicks, userMap, playerMap, roundColor) {
     console.log('Pick data:', {pick_no: pick.pick_no, picked_by: pick.picked_by, player_id: pick.player_id, teamName, isDraftOrder});
     
     return `
-      <div style="display:flex;align-items:center;padding:10px;margin-bottom:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);transition:all 0.2s ease;" 
-           onmouseover="this.style.background='var(--bg3)'" 
+      <div class="draft-pick-card" style="display:flex;align-items:center;padding:10px;margin-bottom:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);transition:all 0.2s ease;"
+           onmouseover="this.style.background='var(--bg3)'"
            onmouseout="this.style.background='var(--bg)'">
-        <div style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;background:${roundColor};color:white;border-radius:50%;font-weight:700;font-size:14px;margin-right:12px;">
+        <div class="pick-num-circle" style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;flex-shrink:0;background:${roundColor};color:white;border-radius:50%;font-weight:700;font-size:14px;margin-right:12px;">
           ${roundPick}
         </div>
         ${!isDraftOrder && pick.player_id ? `
-          <div style="width:40px;height:40px;border-radius:50%;margin-right:12px;overflow:hidden;flex-shrink:0;">
-            <img src="${playerThumbUrl(pick.player_id)}" 
-                 style="width:100%;height:100%;object-fit:cover;" 
+          <div class="pick-player-thumb" style="width:40px;height:40px;border-radius:50%;margin-right:12px;overflow:hidden;flex-shrink:0;">
+            <img src="${playerThumbUrl(pick.player_id)}"
+                 style="width:100%;height:100%;object-fit:cover;"
                  onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIGZpbGw9IiNlZGVkZWQiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5QPC90ZXh0Pjwvc3ZnPg=='" />
           </div>
         ` : ''}
-        <div style="flex:1;">
-          <div style="font-weight:600;color:var(--text);font-size:14px;">
+        <div style="flex:1;min-width:0;">
+          <div class="pick-player-name" style="font-weight:600;color:var(--text);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
             ${isDraftOrder ? 'Draft Pick' : playerName}
           </div>
-          <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-top:2px;flex-wrap:wrap;">
             ${!isDraftOrder ? `<span style="background:${roundColor};color:white;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:500;">${position}</span>` : ''}
             <span style="color:var(--text-muted);font-size:12px;">Overall #${overallPick}</span>
+            <span class="pick-owner-name" style="font-family:'DM Mono',monospace;font-size:11px;font-weight:600;color:${teamColor};">${teamName}</span>
           </div>
-        </div>
-        <div class="draft-pick-team" style="text-align:right;margin-left:12px;flex-shrink:0;">
-          <div style="font-size:12px;color:${teamColor};font-weight:500;">${teamName}</div>
         </div>
       </div>
     `;
@@ -4779,9 +4714,8 @@ function renderTimeline(){
   });
 
   const teamNames=[...new Set(Object.values(rosterMap))].sort();
-  const palette=['#00ff87','#4da6ff','#b388ff','#ffb347','#ff5555','#ff9f1c','#2ec4b6','#e71d36','#f9c74f','#90be6d'];
   const teamColors={};
-  teamNames.forEach((n,i)=>{teamColors[n]=palette[i%palette.length];});
+  teamNames.forEach(n=>{teamColors[n]=getTeamColor(n);});
 
   // Canvas sizing
   const dpr=window.devicePixelRatio||1;
@@ -5344,7 +5278,7 @@ function renderFaabGrid(faabByTeam){
   document.getElementById('faab-grid').innerHTML=sorted.map(([name,total])=>{
     const pct=Math.round((total/max)*100);
     return`<div class="metric" style="cursor:default">
-      <div class="metric-label" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}</div>
+      <div class="metric-label" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:${getTeamColor(name)}">${name}</div>
       <div class="metric-value" style="color:var(--amber);font-size:24px">$${total}</div>
       <div style="height:3px;background:var(--bg3);border-radius:2px;margin-top:6px;overflow:hidden"><div style="height:100%;width:${pct}%;background:#ffb347;border-radius:2px"></div></div>
     </div>`;
@@ -5375,7 +5309,7 @@ function renderFaabRemainingGrid(faabSpentCurrentSeason, startingBudget=100, sea
     const pct=Math.round((Math.max(r.remaining,0)/max)*100);
     const color=r.remaining<=10?'#ff5555':r.remaining<=25?'#ffb347':'#00ff87';
     return`<div class="metric" style="cursor:default">
-      <div class="metric-label" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.name}</div>
+      <div class="metric-label" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:${getTeamColor(r.name)}">${r.name}</div>
       <div class="metric-value" style="color:${color};font-size:24px">$${r.remaining}</div>
       <div class="metric-sub">Spent $${r.spent} of $${startingBudget} · ${seasonLabel}</div>
       <div style="height:3px;background:var(--bg3);border-radius:2px;margin-top:6px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${color};border-radius:2px"></div></div>
@@ -5461,8 +5395,6 @@ function renderWaivers(){
   tbody.innerHTML=visibleWaivers.map((tx,i)=>{
     const rid=tx.roster_ids?.[0];
     const teamName=rosterMap[rid]||`Roster ${rid}`;
-    const avatarId=avatarMap[rid]||'';
-    const avatarUrl=avatarId?`https://sleepercdn.com/avatars/thumbs/${avatarId}`:'';
     const date=tx.created?new Date(tx.created).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'}):'—';
     const bid=tx.settings?.waiver_bid||0;
 
@@ -5492,17 +5424,13 @@ function renderWaivers(){
       </div>`;
     }).join('');
 
-    const avatarHtml=avatarUrl
-      ?`<img src="${avatarUrl}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`
-      :`<div style="width:24px;height:24px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:12px;color:var(--green);flex-shrink:0">${(teamName[0]||'?')}</div>`;
-
     const typeBadge=tx.type==='waiver'
       ?`<span style="font-family:'DM Mono',monospace;font-size:10px;background:rgba(77,166,255,0.1);color:#4da6ff;border:1px solid rgba(77,166,255,0.2);padding:1px 6px;border-radius:3px">WAIVER</span>`
       :`<span style="font-family:'DM Mono',monospace;font-size:10px;background:rgba(0,255,135,0.08);color:#00c96a;border:1px solid rgba(0,255,135,0.15);padding:1px 6px;border-radius:3px">FREE</span>`;
 
     return`<tr class="fade-in" style="animation-delay:${Math.min(i*0.01,0.3)}s">
       <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);white-space:nowrap">${date}</td>
-      <td><div style="display:flex;align-items:center;gap:7px">${avatarHtml}<span style="font-size:13px;font-weight:500">${teamName}</span></div></td>
+      <td><span style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:${getTeamColor(teamName)}">${teamName}</span></td>
       <td>${added||'—'}</td>
       <td>${dropped||'—'}</td>
       <td style="font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:${bid>0?'#ffb347':'var(--text-muted)'}">${bid>0?'$'+bid:'—'}</td>
