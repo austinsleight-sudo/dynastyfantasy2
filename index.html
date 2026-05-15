@@ -94,6 +94,10 @@ td{padding:12px 16px;font-size:15px;vertical-align:middle;}
 .team-filter-btn:hover{border-color:var(--border-bright);color:var(--text);}
 .team-filter-btn.active{color:#000;border-color:var(--green);background:var(--green);font-weight:600;}
 
+/* Filter pairs — label stacked above control */
+.filter-pair{display:contents;}
+.filter-label{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);}
+
 /* Trade cards */
 .trades-list{display:flex;flex-direction:column;gap:12px;}
 .trade-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color 0.15s;}
@@ -140,8 +144,10 @@ td{padding:12px 16px;font-size:15px;vertical-align:middle;}
 }
 @media(max-width:600px){
   /* Force mobile styles with higher specificity */
-  body .wrap{padding:0 4px 16px !important;max-width:100vw !important;overflow-x:hidden !important;}
-  body .nav-tab{padding:0 6px !important;font-size:10px !important;min-width:0 !important;}
+  body .wrap{padding:0 4px 16px !important;max-width:100vw !important;}
+  /* Hide tab bar, show dropdown instead */
+  body .nav-tabs{display:none !important;}
+  body .nav-mobile-select{display:block !important;width:100% !important;height:40px !important;padding:0 12px !important;margin-bottom:16px !important;font-family:'DM Mono',monospace !important;font-size:13px !important;letter-spacing:0.06em !important;background:var(--bg2) !important;color:var(--green) !important;border:1px solid rgba(0,255,135,0.3) !important;border-radius:4px !important;cursor:pointer !important;outline:none !important;appearance:auto !important;}
   
   /* Team Rosters Mobile - force single column */
   body #team-roster-layout{grid-template-columns:1fr !important;gap:4px !important;width:100% !important;}
@@ -172,6 +178,8 @@ td{padding:12px 16px;font-size:15px;vertical-align:middle;}
   body .draft-pick .player-info{min-width:0 !important;}
   body .draft-pick .player-info-name{font-size:11px !important;}
   body .draft-pick .player-info-sub{font-size:9px !important;}
+  body .draft-pick-team{max-width:72px !important;overflow:hidden !important;}
+  body .draft-pick-team div{font-size:10px !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;}
   
   /* Draft Picks Mobile - force single column */
   body #picks-wrap{grid-template-columns:1fr !important;gap:4px !important;overflow-x:hidden !important;width:100% !important;}
@@ -181,11 +189,8 @@ td{padding:12px 16px;font-size:15px;vertical-align:middle;}
   body th{padding:4px 6px !important;font-size:9px !important;}
   body td{padding:4px 6px !important;font-size:9px !important;}
   
-  /* Trade Timeline Mobile */
-  body .timeline-item{flex-direction:column !important;}
-  body .timeline-content{margin-left:0 !important;margin-top:4px !important;}
-  body .timeline-date{font-size:9px !important;}
-  body .timeline-wrap{overflow-x:hidden !important;}
+  /* Trade Timeline Mobile — allow horizontal scroll */
+  body #timeline-wrap{overflow-x:auto !important;-webkit-overflow-scrolling:touch !important;}
   
   /* Force all elements smaller */
   body .section-label{font-size:11px !important;margin-bottom:6px !important;}
@@ -195,10 +200,25 @@ td{padding:12px 16px;font-size:15px;vertical-align:middle;}
   body .controls{gap:2px !important;}
   body .pos-btn{height:24px !important;padding:0 6px !important;font-size:10px !important;}
   body .team-filter-btn{height:24px !important;padding:0 6px !important;font-size:10px !important;}
+
+  /* Trade filters — 2-column grid on mobile */
+  body #trade-wire-filter-controls{display:grid !important;grid-template-columns:1fr 1fr !important;gap:8px !important;justify-content:unset !important;align-items:unset !important;}
+  body .filter-pair{display:flex !important;flex-direction:column !important;gap:3px !important;}
+  body .filter-pair.filter-search{grid-column:1/-1 !important;}
+  body .filter-pair .filter-label{font-size:9px !important;letter-spacing:0.08em !important;text-transform:uppercase !important;}
+  body .filter-pair input,body .filter-pair select{width:100% !important;font-size:11px !important;}
+  body .filter-pair input{width:100% !important;}
   
-  /* Force prevent horizontal scrolling */
+  /* Prevent page-level horizontal scroll but allow scrollable children */
   body{overflow-x:hidden !important;max-width:100vw !important;}
-  body *{box-sizing:border-box !important;max-width:100% !important;}
+  body *{box-sizing:border-box !important;}
+  body *{max-width:100% !important;}
+  #timeline-wrap,#timeline-wrap *{max-width:none !important;}
+  body .panel.active{display:block !important;}
+
+  /* Constitution — stack navigator above content */
+  body #panel-constitution > div{grid-template-columns:1fr !important;}
+  body #panel-constitution .metric[style*="sticky"]{position:static !important;}
   
   /* Force all text smaller */
   body h1{font-size:20px !important;}
@@ -259,6 +279,19 @@ td{padding:12px 16px;font-size:15px;vertical-align:middle;}
     <button class="nav-tab" onclick="switchTab('standings')">STANDINGS</button>
     <button class="nav-tab" onclick="switchTab('constitution')">CONSTITUTION</button>
   </div>
+  <select id="nav-mobile-select" class="nav-mobile-select" onchange="switchTab(this.value);this.blur();" style="display:none;">
+    <option value="roster">Roster Analyzer</option>
+    <option value="team-rosters">Team Rosters</option>
+    <option value="trades">Trade History</option>
+    <option value="waivers">Waivers &amp; FAAB</option>
+    <option value="rookie-draft">Rookie Draft</option>
+    <option value="picks">Draft Picks</option>
+    <option value="records">Records</option>
+    <option value="timeline">Trade Timeline</option>
+    <option value="ages">Age Chart</option>
+    <option value="standings">Standings</option>
+    <option value="constitution">Constitution</option>
+  </select>
 
   <!-- ══════ ROSTER PANEL ══════ -->
   <div class="panel active" id="panel-roster">
@@ -441,35 +474,47 @@ td{padding:12px 16px;font-size:15px;vertical-align:middle;}
           </div>
         </div>
         <div id="trade-wire-filter-controls" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
-          <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">Search</span>
-          <input type="text" id="trade-player-search" placeholder="Player name..." style="padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg3);color:var(--text);font-size:11px;width:150px;">
-          <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">Team</span>
-          <select id="trade-team-filter" onchange="setTradeTeam(this.value)">
-            <option value="ALL">Any team</option>
-          </select>
-          <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">Season</span>
-          <select id="trade-season-filter" onchange="setTradeSeason(this.value)">
-            <option value="ALL">All</option>
-          </select>
-          <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">Type</span>
-          <select id="trade-type-filter" onchange="setTradeType(this.value)">
-            <option value="ALL">All trades</option>
-            <option value="2">2-way</option>
-            <option value="3">3-way</option>
-            <option value="4+">4+ way</option>
-          </select>
-          <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">Assets</span>
-          <select id="trade-asset-filter" onchange="setTradeAsset(this.value)">
-            <option value="ALL">All assets</option>
-            <option value="players">Players only</option>
-            <option value="picks">Picks only</option>
-            <option value="mixed">Players + picks</option>
-          </select>
-          <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">Sort</span>
-          <select id="trade-sort" onchange="renderTrades()">
-            <option value="date">Most Recent</option>
-            <option value="team">By Team</option>
-          </select>
+          <div class="filter-pair filter-search">
+            <span class="filter-label">Search</span>
+            <input type="text" id="trade-player-search" placeholder="Player name..." style="padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg3);color:var(--text);font-size:11px;width:150px;">
+          </div>
+          <div class="filter-pair">
+            <span class="filter-label">Team</span>
+            <select id="trade-team-filter" onchange="setTradeTeam(this.value)">
+              <option value="ALL">Any team</option>
+            </select>
+          </div>
+          <div class="filter-pair">
+            <span class="filter-label">Season</span>
+            <select id="trade-season-filter" onchange="setTradeSeason(this.value)">
+              <option value="ALL">All</option>
+            </select>
+          </div>
+          <div class="filter-pair">
+            <span class="filter-label">Type</span>
+            <select id="trade-type-filter" onchange="setTradeType(this.value)">
+              <option value="ALL">All trades</option>
+              <option value="2">2-way</option>
+              <option value="3">3-way</option>
+              <option value="4+">4+ way</option>
+            </select>
+          </div>
+          <div class="filter-pair">
+            <span class="filter-label">Assets</span>
+            <select id="trade-asset-filter" onchange="setTradeAsset(this.value)">
+              <option value="ALL">All assets</option>
+              <option value="players">Players only</option>
+              <option value="picks">Picks only</option>
+              <option value="mixed">Players + picks</option>
+            </select>
+          </div>
+          <div class="filter-pair">
+            <span class="filter-label">Sort</span>
+            <select id="trade-sort" onchange="renderTrades()">
+              <option value="date">Most Recent</option>
+              <option value="team">By Team</option>
+            </select>
+          </div>
         </div>
       </div>
       <!-- Trade partner stats -->
@@ -2246,6 +2291,7 @@ function renderTeamRosterView(){
    TRADE LOGIC
 ══════════════════════════════════════════════════════════ */
 let allTrades=[], rosterMap={}, userMap={}, playerMap={}, avatarMap={}, activeTeamFilter='ALL', activeTradeTeamA='ALL', activeTradeTeamB='ALL', activeTradeSeason='ALL', activeTradeType='ALL', activeTradeAsset='ALL', activeTradePartnerTeam='ALL', activeTradeSubTab='single', tradesLoaded=false, activePlayerSearch='';
+let recordsTxLoaded=false; // tracks if Records tab has already fetched tx data (separate from trades/waivers panel init)
 let activeWaiverSubTab='activity', activeAgeSubTab='curves', activePicksSeason='ALL';
 let activeTradePageSize='25', tradeVisibleCount=25, activeWaiverPageSize='25', waiverVisibleCount=25;
 
@@ -2833,6 +2879,8 @@ function buildTradeCard(t){
 function switchTab(tab){
   document.querySelectorAll('.nav-tab').forEach((t,i)=>t.classList.toggle('active',['roster','team-rosters','trades','waivers','rookie-draft','picks','records','timeline','ages','standings','constitution'][i]===tab));
   document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id===`panel-${tab}`));
+  const sel=document.getElementById('nav-mobile-select');
+  if(sel&&sel.value!==tab) sel.value=tab;
   if(tab==='team-rosters'){initTeamRostersPanel();}
   if(tab==='trades'&&!tradesLoaded){tradesLoaded=true;initTrades();}
   if(tab==='waivers'&&!waiversLoaded){waiversLoaded=true;initWaivers();}
@@ -3368,7 +3416,7 @@ function renderNewDraftRound(roundPicks, userMap, playerMap, roundColor) {
             <span style="color:var(--text-muted);font-size:12px;">Overall #${overallPick}</span>
           </div>
         </div>
-        <div style="text-align:right;margin-left:12px;">
+        <div class="draft-pick-team" style="text-align:right;margin-left:12px;flex-shrink:0;">
           <div style="font-size:12px;color:${teamColor};font-weight:500;">${teamName}</div>
         </div>
       </div>
@@ -4402,7 +4450,7 @@ async function fetchMatchupRecords() {
 }
 
 async function initRecords(){
-  if(tradesLoaded&&waiversLoaded){ renderRecords(); return; }
+  if(recordsTxLoaded){ renderRecords(); return; }
   document.getElementById('records-wrap').innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted);font-family:\'DM Mono\',monospace;font-size:12px;display:flex;align-items:center;justify-content:center;gap:10px;"><div style="width:14px;height:14px;border:2px solid rgba(255,255,255,0.2);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite"></div>Loading league data...</div>';
   // Ensure rosterMap populated
   if(Object.keys(rosterMap).length===0){
@@ -4422,8 +4470,12 @@ async function initRecords(){
     weeks.flat().forEach(tx=>{if(!tx||tx.status!=='complete')return;if(!allTxMap.has(tx.transaction_id))allTxMap.set(tx.transaction_id,{...tx,season});});
   }
   const all=Array.from(allTxMap.values());
-  if(!tradesLoaded){allTrades=all.filter(t=>t.type==='trade').sort((a,b)=>b.created-a.created);tradesLoaded=true;}
-  if(!waiversLoaded){allWaivers=all.filter(t=>['waiver','free_agent'].includes(t.type)).sort((a,b)=>b.created-a.created);waiversLoaded=true;}
+  // Populate allTrades/allWaivers for records rendering WITHOUT setting the panel-init flags.
+  // tradesLoaded/waiversLoaded are only set by initTrades()/initWaivers() so those panels
+  // always run their full UI setup when the user navigates to them.
+  allTrades=all.filter(t=>t.type==='trade').sort((a,b)=>b.created-a.created);
+  allWaivers=all.filter(t=>['waiver','free_agent'].includes(t.type)).sort((a,b)=>b.created-a.created);
+  recordsTxLoaded=true;
   if(Object.keys(playerMap).length===0){
     playerMap=await fetch(SLEEPER+'/players/nfl').then(r=>r.ok?r.json():{}).catch(()=>({}));
   }
@@ -4680,8 +4732,8 @@ function renderTimeline(){
   const wrap = document.getElementById('timeline-wrap');
   const status = document.getElementById('timeline-status');
 
-  if(!tradesLoaded||!allTrades.length){
-    status.textContent='Load the Trades tab first.';
+  if(!allTrades.length){
+    status.textContent='Load the Trades or Records tab first.';
     wrap.innerHTML='';
     return;
   }
@@ -4732,10 +4784,9 @@ function renderTimeline(){
   const canvas=document.createElement('canvas');
   canvas.width=totalW*dpr;
   canvas.height=H*dpr;
-  canvas.style.width=Math.min(totalW,W)+'px';
+  canvas.style.width=totalW+'px';
   canvas.style.height=H+'px';
   canvas.style.display='block';
-  canvas.style.maxWidth='100%';
 
   const ctx=canvas.getContext('2d');
   ctx.scale(dpr,dpr);
