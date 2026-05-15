@@ -209,6 +209,19 @@ td{padding:12px 16px;font-size:15px;vertical-align:middle;}
   body .team-card{padding:8px !important;}
   body .team-card-name{font-size:12px !important;}
   body .team-card-score{font-size:16px !important;}
+
+  /* Team Roster layout — stack all flex rows vertically */
+  body .roster-main-row{flex-direction:column !important;}
+  body .roster-bench-taxi-row{flex-direction:column !important;}
+  body .roster-main-row > div{flex:unset !important;width:100% !important;}
+  body .roster-bench-taxi-row > div{flex:unset !important;width:100% !important;}
+
+  /* Records section — ensure group headers span full width */
+  body #records-wrap{grid-template-columns:1fr !important;}
+  body #records-wrap > div[style*="grid-column"]{margin-top:12px !important;}
+
+  /* Top Starters card */
+  body .top-starters-card{padding:10px !important;}
 }
 
 @media(max-width:900px) and (min-width:601px){
@@ -217,6 +230,8 @@ td{padding:12px 16px;font-size:15px;vertical-align:middle;}
   .trade-assets{grid-template-columns:1fr 1fr !important;}
   #rookie-draft-wrap>div{grid-template-columns:1fr 1fr !important;}
   #picks-wrap{grid-template-columns:1fr 1fr !important;}
+  .roster-main-row{flex-direction:column !important;}
+  .roster-main-row > div{flex:unset !important;width:100% !important;}
 }
 </style>
 </head>
@@ -1474,6 +1489,7 @@ buildTeamGrid();
 let teamRostersReady=false, teamRosterLoading=false, sleeperTeamRosters=[], sleeperRosterMap={}, sleeperAvatarMap={}, teamRosterLimit=26, teamRosterPicksByOwner={};
 let rosterScheduleMap={}, rosterSelectedWeek=0, rosterScheduleLoaded=false, rosterScheduleSeason='2026';
 let nflByeWeekMap={}; // teamAbbr → bye week number, derived from ESPN schedule data
+let startsMapCache=null; // teamName → { playerId → startCount }
 async function initTeamRostersPanel(){
   if(teamRostersReady||teamRosterLoading) return;
   teamRosterLoading=true;
@@ -1601,6 +1617,9 @@ async function initTeamRostersPanel(){
 
     // Build bye week map in background — re-render once ready so bye alerts populate
     buildByeWeekMap(rosterScheduleSeason).then(()=>{ if(teamRostersReady) renderTeamRosterView(); });
+
+    // Build starts map in background — re-render once ready so top starters card populates
+    buildStartsMap().then(()=>{ if(teamRostersReady) renderTeamRosterView(); });
 
   }catch(err){
     console.error(err);
@@ -1944,6 +1963,97 @@ function isTaxiEligible(pid, seasonLabel){
   return false;
 }
 
+async function buildStartsMap() {
+  if (startsMapCache) return startsMapCache;
+  const result = {}; // teamName → { playerId → count }
+
+  for (const {lid} of ALL_LEAGUE_IDS) {
+    // Build roster_id → team name for this league
+    const [uRes, rRes] = await Promise.all([
+      fetch(`${SLEEPER}/league/${lid}/users`).then(r=>r.ok?r.json():[]).catch(()=>[]),
+      fetch(`${SLEEPER}/league/${lid}/rosters`).then(r=>r.ok?r.json():[]).catch(()=>[])
+    ]);
+    const localUserMap = {};
+    const localRosterMap = {};
+    if (Array.isArray(uRes)) uRes.forEach(u=>{ if(u) localUserMap[u.user_id]=u.display_name||u.username; });
+    if (Array.isArray(rRes)) rRes.forEach(r=>{ if(!r) return; localRosterMap[r.roster_id]=localUserMap[r.owner_id]||'Team '+r.roster_id; });
+
+    // Fetch all 14 weeks in parallel
+    const weekResults = await Promise.all(
+      Array.from({length:14},(_,i)=>
+        fetch(`${SLEEPER}/league/${lid}/matchups/${i+1}`).then(r=>r.ok?r.json():[]).catch(()=>[])
+      )
+    );
+
+    weekResults.forEach(matchups => {
+      if (!Array.isArray(matchups)) return;
+      matchups.forEach(m => {
+        if (!m || !m.roster_id || !Array.isArray(m.starters)) return;
+        if ((m.points || 0) === 0) return; // skip unplayed weeks
+        const teamName = localRosterMap[m.roster_id];
+        if (!teamName) return;
+        if (!result[teamName]) result[teamName] = {};
+        m.starters.forEach(pid => {
+          if (!pid || pid === '0') return; // '0' = empty slot
+          result[teamName][pid] = (result[teamName][pid] || 0) + 1;
+        });
+      });
+    });
+  }
+
+  startsMapCache = result;
+  return result;
+}
+
+function renderTopStarts(teamName) {
+  if (!startsMapCache) {
+    return `<div class="metric" style="padding:14px 16px;">
+      <div class="metric-label" style="font-size:13px;margin-bottom:8px;">Top Starters</div>
+      <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">Loading starts data…</div>
+    </div>`;
+  }
+
+  const teamStarts = startsMapCache[teamName] || {};
+  const sorted = Object.entries(teamStarts)
+    .sort((a,b) => b[1]-a[1])
+    .slice(0,5);
+
+  if (!sorted.length) {
+    return `<div class="metric" style="padding:14px 16px;">
+      <div class="metric-label" style="font-size:13px;margin-bottom:8px;">Top Starters</div>
+      <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">No starts data found.</div>
+    </div>`;
+  }
+
+  const maxStarts = sorted[0][1];
+  const rows = sorted.map(([pid, count], i) => {
+    const p = playerMap[pid] || {};
+    const name = p.full_name || `${p.first_name||''} ${p.last_name||''}`.trim() || pid;
+    const pos = p.position || '—';
+    const posClass = ['QB','RB','WR','TE'].includes(pos) ? `pos-${pos}` : '';
+    const barPct = Math.round((count / maxStarts) * 100);
+    const rankColor = i===0?'#ffb347':i===1?'#b0b8c1':i===2?'#cd7f32':'var(--text-muted)';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+      <span style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;color:${rankColor};width:16px;text-align:center;flex-shrink:0;">${i+1}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}</div>
+        <div style="display:flex;align-items:center;gap:5px;margin-top:3px;">
+          <span class="pos-pill ${posClass}" style="font-size:9px;padding:1px 4px;">${pos}</span>
+          <div style="flex:1;height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;">
+            <div style="width:${barPct}%;height:100%;background:var(--green);border-radius:2px;opacity:0.7;"></div>
+          </div>
+        </div>
+      </div>
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:${rankColor};flex-shrink:0;letter-spacing:0.04em;">${count}</span>
+    </div>`;
+  }).join('');
+
+  return `<div class="metric" style="padding:14px 16px;">
+    <div class="metric-label" style="font-size:13px;margin-bottom:10px;">Top Starters All-Time</div>
+    ${rows}
+  </div>`;
+}
+
 function renderByeWeekAlerts(allPlayers) {
   // Use nflByeWeekMap (from ESPN schedule) first; fall back to Sleeper's p.bye_week
   const byeMap = {};
@@ -2111,9 +2221,9 @@ function renderTeamRosterView(){
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;align-items:start;">
       ${renderStartersByPosition(filteredStarters)}
     </div>
-    <div style="display:flex;gap:16px;margin-top:16px;">
+    <div class="roster-main-row" style="display:flex;gap:16px;margin-top:16px;">
       <div style="flex:2.5;display:flex;flex-direction:column;gap:16px;">
-        <div style="display:flex;gap:16px;align-items:start;">
+        <div class="roster-bench-taxi-row" style="display:flex;gap:16px;align-items:start;">
           <div style="flex:1.4;">${renderRosterSection('Bench',benchCards,'No bench players')}</div>
           <div style="flex:1;display:flex;flex-direction:column;gap:16px;">
             ${renderRosterSection('Taxi Squad',taxiCards,'No taxi players')}
@@ -2124,6 +2234,7 @@ function renderTeamRosterView(){
       </div>
       <div style="flex:1;display:flex;flex-direction:column;gap:16px;">
         ${renderByeWeekAlerts(allPlayers)}
+        ${renderTopStarts(roster.teamName)}
       </div>
     </div>
   `;
@@ -4176,6 +4287,7 @@ async function fetchMatchupRecords() {
   const allScores   = []; // {team, score, week, season}
   const allMatchups = []; // {winner, loser, winScore, loseScore, margin, week, season}
   const seasonTotals = {}; // `${team}|${season}` → cumulative points
+  const uniqueLineupSets = {}; // teamName → Set of lineup fingerprints
 
   for (const {lid, season} of ALL_LEAGUE_IDS) {
     const [uRes, rRes] = await Promise.all([
@@ -4196,6 +4308,19 @@ async function fetchMatchupRecords() {
     weekResults.forEach((matchups, idx) => {
       const week = idx + 1;
       if (!Array.isArray(matchups) || !matchups.length) return;
+
+      // Track unique starting lineups per team (before pairing games)
+      matchups.forEach(m => {
+        if (!m || !m.roster_id || !Array.isArray(m.starters)) return;
+        if ((m.points || 0) === 0) return; // skip unplayed weeks
+        const teamName = localRosterMap[m.roster_id];
+        if (!teamName) return;
+        const fingerprint = [...m.starters].filter(p=>p&&p!=='0').sort().join(',');
+        if (!fingerprint) return;
+        if (!uniqueLineupSets[teamName]) uniqueLineupSets[teamName] = new Set();
+        uniqueLineupSets[teamName].add(fingerprint);
+      });
+
       const byMid = {};
       matchups.forEach(m => {
         if (!m || !m.matchup_id) return;
@@ -4258,6 +4383,11 @@ async function fetchMatchupRecords() {
     .map(([key, pts]) => { const [team, season] = key.split('|'); return {team, season, pts}; })
     .sort((a,b)=>b.pts-a.pts).slice(0,3);
 
+  // Most unique starting lineups all-time
+  const uniqueLineups = Object.entries(uniqueLineupSets)
+    .map(([team, set]) => [team, set.size])
+    .sort((a,b) => b[1]-a[1]);
+
   matchupRecordsCache = {
     highScores: allScores.slice(0,3),
     blowouts: allMatchups.slice(0,3),
@@ -4266,6 +4396,7 @@ async function fetchMatchupRecords() {
     closestGames,
     highCombined,
     mostPointsSeason,
+    uniqueLineups,
   };
   return matchupRecordsCache;
 }
@@ -4502,6 +4633,10 @@ async function renderRecords(){
       totalMoves[n]=(totalMoves[n]||0)+moves;
     });
     if(Object.keys(totalMoves).length) g.roster.push({icon:'🔃',label:'Most total roster moves',rows:top3(Object.entries(totalMoves)),unit:'moves'});
+  }
+
+  if(matchupData.uniqueLineups.length){
+    g.roster.push({icon:'🧩',label:'Most unique starting lineups',rows:top3(matchupData.uniqueLineups),unit:'lineups'});
   }
 
   // ── RENDER ───────────────────────────────────────────────
