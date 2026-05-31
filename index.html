@@ -237,6 +237,28 @@ td{padding:12px 16px;font-size:15px;vertical-align:middle;}
   body{max-width:100vw !important;}
   body .wrap{overflow-x:hidden !important;}
   body *{box-sizing:border-box !important;}
+
+  /* ── KTC ANALYZER VIEWS ────────────────────────────── */
+  /* Stack all 2-col grids in analyzer views to single col */
+  body #analyzer-radar > div,
+  body #analyzer-valgraph > div,
+  body #analyzer-starters > div { grid-template-columns:1fr !important; }
+  /* Age vs value SVG: full width */
+  body #analyzer-ageval svg { width:100% !important; max-width:100% !important; }
+  /* Analyzer tab buttons: tighten text */
+  body #aview-ageval { font-size:9px !important; }
+  body #aview-valgraph { font-size:9px !important; }
+
+  /* ── KTC TRADE VALUE ANALYSIS ──────────────────────── */
+  /* Stack trade card sides vertically */
+  body .ktc-trade-sides { flex-direction:column !important; }
+  body .ktc-trade-sides > div { min-width:100% !important; }
+  /* KTC filter controls stack */
+  body #trade-ktc-section > div:first-child { flex-direction:column !important; align-items:flex-start !important; gap:8px !important; }
+  body #ktc-player-search { width:100% !important; }
+
+  /* ── BOOM / BUST ────────────────────────────────────── */
+  body .boom-bust-grid { grid-template-columns:1fr !important; }
   body *{max-width:100% !important;}
   #timeline-wrap *{max-width:none !important;}
   body .panel.active{display:block !important;}
@@ -342,12 +364,6 @@ td{padding:12px 16px;font-size:15px;vertical-align:middle;}
         <button class="pos-btn" id="aview-ageval" onclick="setAnalyzerView('ageval')">Age vs Value</button>
         <button class="pos-btn" id="aview-valgraph" onclick="setAnalyzerView('valgraph')">Value Graph</button>
         <button class="pos-btn" id="aview-starters" onclick="setAnalyzerView('starters')">Starters</button>
-        <div class="ml-auto" style="display:flex;align-items:center;gap:6px;">
-          <label style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;gap:5px;">
-            <input type="checkbox" id="include-picks-toggle" onchange="updateMetrics()" style="cursor:pointer;accent-color:var(--green);">
-            Include Picks
-          </label>
-        </div>
       </div>
       <!-- Overview (default) -->
       <div id="analyzer-overview">
@@ -521,6 +537,7 @@ td{padding:12px 16px;font-size:15px;vertical-align:middle;}
           <div id="trade-sub-tabs" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px;">
             <button class="team-filter-btn active" id="trade-subtab-single" style="height:26px;font-size:11px;padding:0 10px;" onclick="setTradeSubTab('single')">Trade Wire</button>
             <button class="team-filter-btn" id="trade-subtab-partners" style="height:26px;font-size:11px;padding:0 10px;" onclick="setTradeSubTab('partners')">Most Frequent Trade Partners</button>
+            <button class="team-filter-btn" id="trade-subtab-ktc" style="height:26px;font-size:11px;padding:0 10px;" onclick="setTradeSubTab('ktc')">KTC Value Analysis</button>
           </div>
         </div>
         <div id="trade-wire-filter-controls" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
@@ -579,6 +596,27 @@ td{padding:12px 16px;font-size:15px;vertical-align:middle;}
           </div>
         </div>
         <div id="trade-partners-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;"></div>
+      </div>
+      <!-- KTC Value Analysis section -->
+      <div id="trade-ktc-section" style="display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+          <span class="section-label" style="margin-bottom:0;">Most lopsided trades by KTC value</span>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">KTC snapshot</span>
+            <select id="ktc-trade-version" onchange="renderTradeValueAnalysis()" style="height:28px;padding:0 8px;border-radius:3px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;outline:none;"></select>
+            <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">Filter</span>
+            <select id="ktc-trade-season-filter" onchange="renderTradeValueAnalysis()" style="height:28px;padding:0 8px;border-radius:3px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;outline:none;">
+              <option value="ALL">All seasons</option>
+            </select>
+            <select id="ktc-trade-team-filter" onchange="renderTradeValueAnalysis()" style="height:28px;padding:0 8px;border-radius:3px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;outline:none;">
+              <option value="ALL">All teams</option>
+            </select>
+          </div>
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);margin-bottom:16px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;">
+          Players use <strong id="ktc-trade-version-note">current</strong> KTC values. Pick values use a ~5% discount from raw KTC round values to account for picks skewing mid-to-late (2027: 5,400 / 3,725 / 2,500 / 2,125 · 2028: 4,300 / 3,000 / 2,075 / 1,900). Past picks estimated by years-out at trade time. 2029+ = 0.
+        </div>
+        <div id="ktc-trade-list"></div>
       </div>
       <div id="trade-single-filter-section" style="border-top:1px solid var(--border);padding-top:24px;margin-bottom:16px;display:block;">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px;">
@@ -1964,12 +2002,8 @@ function renderRoster(){
 function updateMetrics(){
   if(rosterTeamIdx===null)return;
   const team=TEAMS[rosterTeamIdx];
-  const includePicks=document.getElementById('include-picks-toggle')?.checked||false;
   const players=team.players.filter(p=>p.ktc>0);
-  let total=players.reduce((s,p)=>s+p.ktc,0);
-  // Estimated pick values (2027-2028 rounds)
-  const PICK_VALS={r1_27:2800,r2_27:1100,r3_27:550,r4_27:200,r1_28:3200};
-  if(includePicks&&team.ownFirst) total+=PICK_VALS.r1_27;
+  const total=players.reduce((s,p)=>s+p.ktc,0);
   const elite=players.filter(p=>p.ktc>=9000).length;
   const t1=players.filter(p=>p.ktc>=7000&&p.ktc<9000).length;
   const t2=players.filter(p=>p.ktc>=5000&&p.ktc<7000).length;
@@ -1981,7 +2015,7 @@ function updateMetrics(){
   };
   document.getElementById('metrics').innerHTML=`
     <div class="metric"><div class="metric-label">KTC Score</div><div class="metric-value" style="color:${scoreColor(score)}">${score}</div><div class="metric-sub">dynasty rank</div></div>
-    <div class="metric"><div class="metric-label">Total Value</div><div class="metric-value">${(total/1000).toFixed(1)}k</div><div class="metric-sub">${includePicks?'w/ picks':'players only'}</div></div>
+    <div class="metric"><div class="metric-label">Total Value</div><div class="metric-value">${(total/1000).toFixed(1)}k</div><div class="metric-sub">dynasty .5 PPR</div></div>
     <div class="metric"><div class="metric-label">Elite</div><div class="metric-value" style="color:#00ff87">${elite}</div><div class="metric-sub">9,000+</div></div>
     <div class="metric"><div class="metric-label">Tier 1</div><div class="metric-value" style="color:#4da6ff">${t1}</div><div class="metric-sub">7,000–8,999</div></div>
     ${pr?`<div class="metric"><div class="metric-label">Position Ranks</div><div class="metric-value" style="font-size:18px;display:flex;gap:10px;flex-wrap:wrap">${['QB','RB','WR','TE'].map(p=>`<span style="color:${pr[p]<=3?'#00ff87':pr[p]<=6?'#ffb347':'#ff6b6b'}">${p}<span style="font-size:13px;opacity:0.8"> #${pr[p]}</span></span>`).join('')}</div><div class="metric-sub">${team.ownFirst?'✓ own 1st':'1st traded'}</div></div>`:''}
@@ -2092,7 +2126,7 @@ function renderRadarView(){
         </table></div>
       </div>
     </div>
-    <style>@media(max-width:700px){#analyzer-radar>div{grid-template-columns:1fr !important}}</style>`;
+    `;
 }
 
 /* ── AGE vs VALUE ── */
@@ -2164,7 +2198,6 @@ function renderAgeValueView(){
 /* ── VALUE GRAPH (by position) ── */
 function renderValueGraphView(){
   const team=TEAMS[rosterTeamIdx];
-  const includePicks=document.getElementById('include-picks-toggle')?.checked||false;
   const color=getTeamColor(team.name);
   const posColors={QB:'#4da6ff',RB:'#00c96a',WR:'#b388ff',TE:'#ffb347'};
   const positions=['QB','RB','WR','TE'];
@@ -2177,7 +2210,6 @@ function renderValueGraphView(){
     const sorted=[...team.players.filter(pl=>pl.pos===p&&pl.ktc>0)].sort((a,b)=>b.ktc-a.ktc);
     starterVals[p]=sorted.slice(0,starterSlots[p]).reduce((s,pl)=>s+pl.ktc,0);
   });
-  if(includePicks&&team.ownFirst){posVals['Picks']=(posVals['Picks']||0)+2800;starterVals['Picks']=2800;}
 
   const allPositions=Object.keys(posVals);
   const maxVal=Math.max(...Object.values(posVals),1);
@@ -2238,7 +2270,7 @@ function renderValueGraphView(){
         </table></div>
       </div>
     </div>
-    <style>@media(max-width:700px){#analyzer-valgraph>div{grid-template-columns:1fr !important}}</style>`;
+    `;
 }
 
 /* ── STARTERS ── */
@@ -2317,7 +2349,7 @@ function renderStartersView(){
           </div></div>`:''}
       </div>
     </div>
-    <style>@media(max-width:700px){#analyzer-starters>div{grid-template-columns:1fr !important}}</style>`;
+    `;
 }
 
 buildTeamGrid();
@@ -3276,23 +3308,368 @@ function setTradePartnerTeam(team){
 }
 
 function setTradeSubTab(tab){
-  activeTradeSubTab=tab==='partners'?'partners':'single';
+  activeTradeSubTab=['partners','ktc'].includes(tab)?tab:'single';
   document.getElementById('trade-subtab-single')?.classList.toggle('active',activeTradeSubTab==='single');
   document.getElementById('trade-subtab-partners')?.classList.toggle('active',activeTradeSubTab==='partners');
+  document.getElementById('trade-subtab-ktc')?.classList.toggle('active',activeTradeSubTab==='ktc');
   const partnersSection=document.getElementById('trade-partners-section');
+  const ktcSection=document.getElementById('trade-ktc-section');
   const singleSection=document.getElementById('trade-single-filter-section');
   const tradesList=document.getElementById('trades-list');
   const tradesFooter=document.getElementById('trades-footer');
   const loadMoreBtn=document.getElementById('trades-load-more-btn');
   const wireControls=document.getElementById('trade-wire-filter-controls');
   if(partnersSection) partnersSection.style.display=activeTradeSubTab==='partners'?'block':'none';
+  if(ktcSection) ktcSection.style.display=activeTradeSubTab==='ktc'?'block':'none';
   if(singleSection) singleSection.style.display=activeTradeSubTab==='single'?'block':'none';
-  if(tradesList) tradesList.style.display=activeTradeSubTab==='partners'?'none':'flex';
-  if(tradesFooter) tradesFooter.style.display=activeTradeSubTab==='partners'?'none':'block';
-  if(loadMoreBtn&&activeTradeSubTab==='partners') loadMoreBtn.style.display='none';
-  if(wireControls) wireControls.style.display=activeTradeSubTab==='partners'?'none':'flex';
+  const hideWire=activeTradeSubTab!=='single';
+  if(tradesList) tradesList.style.display=hideWire?'none':'flex';
+  if(tradesFooter) tradesFooter.style.display=hideWire?'none':'block';
+  if(loadMoreBtn&&hideWire) loadMoreBtn.style.display='none';
+  if(wireControls) wireControls.style.display=hideWire?'none':'flex';
   if(activeTradeSubTab==='partners') renderTradePartners();
+  if(activeTradeSubTab==='ktc') renderTradeValueAnalysis();
 }
+
+/* ══════════════════════════════════════════════════════════
+   KTC TRADE VALUE ANALYSIS
+══════════════════════════════════════════════════════════ */
+function initKtcTradeFilters(){
+  // Version selector
+  const vSel=document.getElementById('ktc-trade-version');
+  if(vSel&&!vSel.options.length){
+    KTC.getVersions().forEach(v=>{
+      const o=document.createElement('option');
+      o.value=v; o.textContent=v;
+      if(v===KTC.currentVersion) o.selected=true;
+      vSel.appendChild(o);
+    });
+  }
+  // Season + team selectors
+  const sSel=document.getElementById('ktc-trade-season-filter');
+  const tSel=document.getElementById('ktc-trade-team-filter');
+  if(sSel&&sSel.options.length<=1){
+    const seasons=[...new Set(allTrades.map(t=>String(t.season||'')).filter(Boolean))].sort((a,b)=>Number(b)-Number(a));
+    seasons.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sSel.appendChild(o);});
+  }
+  if(tSel&&tSel.options.length<=1){
+    const names=[...new Set(Object.values(rosterMap))].sort();
+    names.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;tSel.appendChild(o);});
+  }
+}
+
+function renderTradeValueAnalysis(){
+  initKtcTradeFilters();
+  const versionKey=document.getElementById('ktc-trade-version')?.value||KTC.currentVersion;
+  const seasonFilter=document.getElementById('ktc-trade-season-filter')?.value||'ALL';
+  const teamFilter=document.getElementById('ktc-trade-team-filter')?.value||'ALL';
+
+  // Update the info note
+  const noteEl=document.getElementById('ktc-trade-version-note');
+  if(noteEl) noteEl.textContent=versionKey;
+
+  // Build KTC name → value lookup from the selected version
+  // Uses aggressive normalization: strip ALL non-alphanumeric chars so
+  // "A.J. Brown" = "AJ Brown" = "ajbrown", "Ja'Marr" = "jamarr", etc.
+  const sourceTeams=KTC.versions[versionKey]||KTC.getCurrentData();
+  const ktcMap=new Map();
+
+  function superNorm(name){
+    if(!name) return '';
+    return name.toLowerCase()
+      .replace(/[^a-z0-9\s]/g,'')          // strip all punctuation (dots, apostrophes, hyphens)
+      .replace(/\b(jr|sr|ii|iii|iv|v)\b/g,'') // strip suffixes
+      .replace(/\s+/g,'')                   // collapse all spaces
+      .trim();
+  }
+  // Also build a "last name + first name" variant for name-order mismatches
+  function swapName(norm,original){
+    const parts=original.toLowerCase().replace(/[^a-z0-9\s]/g,'')
+      .replace(/\b(jr|sr|ii|iii|iv|v)\b/g,'').trim().split(/\s+/);
+    if(parts.length>=2) return parts.slice(1).join('')+parts[0];
+    return norm;
+  }
+
+  sourceTeams.forEach(team=>{
+    team.players.forEach(p=>{
+      if(p.ktc>0){
+        const norm=superNorm(p.name);
+        if(norm) ktcMap.set(norm,p.ktc);
+        // Also store last+first variant in case Sleeper stores name differently
+        const swapped=swapName(norm,p.name);
+        if(swapped&&swapped!==norm&&!ktcMap.has(swapped)) ktcMap.set(swapped,p.ktc);
+      }
+    });
+  });
+
+  function lookupKTC(fullName){
+    if(!fullName) return 0;
+    // Try 1: full aggressive normalization
+    const norm=superNorm(fullName);
+    if(ktcMap.has(norm)) return ktcMap.get(norm);
+    // Try 2: swapped name order
+    const swapped=swapName(norm,fullName);
+    if(ktcMap.has(swapped)) return ktcMap.get(swapped);
+    // Try 3: first + last only (drop middle name/initial if present)
+    const parts=fullName.toLowerCase().replace(/[^a-z0-9\s]/g,'').trim().split(/\s+/)
+      .filter(w=>!['jr','sr','ii','iii','iv','v'].includes(w));
+    if(parts.length>=3){
+      // Try first + last (skip middle)
+      const firstLast=parts[0]+parts[parts.length-1];
+      if(ktcMap.has(firstLast)) return ktcMap.get(firstLast);
+    }
+    return 0;
+  }
+
+  // KTC pick values by year. Raw KTC values represent the "average" pick for
+  // that round, but picks skew mid-to-late in practice so we apply a ~5%
+  // discount (~250-300 off 1sts, ~150-200 off 2nds) to better reflect reality.
+  const KTC_PICK_TABLE={
+    '2027':{1:5400,2:3725,3:2500,4:2125},
+    '2028':{1:4300,2:3000,3:2075,4:1900},
+    '2029':{1:0,2:0,3:0,4:0}
+  };
+  // Relative values by "years until draft" — mirrors the 1yr/2yr gap in KTC table
+  const KTC_PICK_BY_YEARS_OUT=[
+    {1:5400,2:3725,3:2500,4:2125}, // 0-1 years out (imminent / current year)
+    {1:5400,2:3725,3:2500,4:2125}, // 1 year out  (~2027 equivalent)
+    {1:4300,2:3000,3:2075,4:1900}, // 2 years out (~2028 equivalent)
+    {1:0,   2:0,   3:0,   4:0   }, // 3+ years out (too speculative)
+  ];
+  function pickKTC(round,season,tradeYear){
+    const r=Math.min(Math.max(round||1,1),4);
+    if(!season) return 0;
+    const yr=String(season);
+    // Exact match in table (known future picks)
+    if(KTC_PICK_TABLE[yr]!==undefined) return KTC_PICK_TABLE[yr][r]||0;
+    // Past pick: estimate based on how far out it was at trade time
+    if(tradeYear){
+      const yearsOut=Math.max(0,Number(season)-tradeYear);
+      const bucket=Math.min(yearsOut,KTC_PICK_BY_YEARS_OUT.length-1);
+      return KTC_PICK_BY_YEARS_OUT[bucket][r]||0;
+    }
+    // Fallback: treat as 1 year out
+    return KTC_PICK_BY_YEARS_OUT[1][r]||0;
+  }
+
+  function roundLabel(r){return['1st','2nd','3rd','4th'][Math.min((r||1)-1,3)];}
+
+  // Analyze each trade
+  const analyzed=[];
+  allTrades.forEach(t=>{
+    const rids=t.roster_ids||[];
+    if(rids.length<2) return;
+    if(seasonFilter!=='ALL'&&String(t.season||'')!==seasonFilter) return;
+    if(teamFilter!=='ALL'&&!rids.some(rid=>rosterMap[rid]===teamFilter)) return;
+
+    const tradeYear=t.created?new Date(t.created).getFullYear():2026;
+    const sides={};
+    const ESTIMATED_VAL=1500;
+    rids.forEach(rid=>{ sides[rid]={players:[],picks:[],total:0,unmatched:[]}; });
+
+    // Players received by each team
+    Object.entries(t.adds||{}).forEach(([pid,rid])=>{
+      if(!sides[rid]) return;
+      const p=playerMap[pid];
+      const name=p?.full_name||(p?.first_name&&p?.last_name?`${p.first_name} ${p.last_name}`:null)||`Player ${pid}`;
+      const pos=p?.position||'';
+      const matched=lookupKTC(name);
+      const ktc=matched||ESTIMATED_VAL;
+      const estimated=!matched&&name&&!name.startsWith('Player ');
+      sides[rid].players.push({name,pos,ktc,estimated});
+      sides[rid].total+=ktc;
+      if(estimated) sides[rid].unmatched.push(name);
+    });
+
+    // Picks received by each team
+    (t.draft_picks||[]).forEach(pk=>{
+      const rid=pk.owner_id;
+      if(!sides[rid]) return;
+      const val=pickKTC(pk.round,pk.season,tradeYear);
+      const origTeam=rosterMap[pk.previous_owner_id]||`Roster ${pk.previous_owner_id}`;
+      const isSelf=pk.previous_owner_id===rid;
+      sides[rid].picks.push({label:`${pk.season} ${roundLabel(pk.round)}`,ktc:val,origTeam,isSelf});
+      sides[rid].total+=val;
+    });
+
+    const sideArr=rids.map(rid=>({rid,name:rosterMap[rid]||`Roster ${rid}`,...sides[rid]}));
+    const totals=sideArr.map(s=>s.total);
+    const maxVal=Math.max(...totals,1);
+    const minVal=Math.min(...totals);
+    const diff=maxVal-minVal;
+    const pctDiff=Math.round(diff/maxVal*100);
+    const winnerRid=sideArr.find(s=>s.total===maxVal)?.rid;
+
+    analyzed.push({trade:t,sides:sideArr,diff,pctDiff,maxVal,minVal,winnerRid,
+      date:t.created?new Date(t.created).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'}):''});
+  });
+
+  analyzed.sort((a,b)=>b.diff-a.diff);
+
+
+
+  const container=document.getElementById('ktc-trade-list');
+  if(!analyzed.length){
+    container.innerHTML='<div class="empty-state">No trades found. Load the Trades tab first to pull data from Sleeper.</div>';
+    return;
+  }
+
+  // Summary stats
+  const avg=Math.round(analyzed.reduce((s,a)=>s+a.diff,0)/analyzed.length);
+  const medianIdx=Math.floor(analyzed.length/2);
+  const median=analyzed[medianIdx]?.diff||0;
+  const over5k=analyzed.filter(a=>a.diff>=5000).length;
+  const summaryHtml=`<div class="metrics" style="margin-bottom:16px;">
+    <div class="metric"><div class="metric-label">Trades Analyzed</div><div class="metric-value">${analyzed.length}</div><div class="metric-sub">all seasons</div></div>
+    <div class="metric"><div class="metric-label">Avg Value Gap</div><div class="metric-value" style="color:#ffb347">${(avg/1000).toFixed(1)}k</div><div class="metric-sub">per trade</div></div>
+    <div class="metric"><div class="metric-label">Median Gap</div><div class="metric-value">${(median/1000).toFixed(1)}k</div><div class="metric-sub">midpoint</div></div>
+    <div class="metric"><div class="metric-label">Lopsided 5k+</div><div class="metric-value" style="color:#ff6b6b">${over5k}</div><div class="metric-sub">clear winners</div></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+    <input id="ktc-player-search" type="text" placeholder="Search player name to filter trades…"
+      oninput="filterKtcTrades(this.value)"
+      style="flex:1;min-width:200px;height:32px;padding:0 12px;border-radius:4px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none;">
+    <span id="ktc-search-count" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);white-space:nowrap;"></span>
+  </div>
+  <div style="font-family:'DM Mono',monospace;font-size:11px;color:#ffb347;margin-bottom:14px;padding:8px 12px;background:rgba(255,179,71,0.08);border:1px solid rgba(255,179,71,0.25);border-radius:6px;">
+    * Player not found in current KTC data (retired, cut, or name mismatch) — estimated at <strong>1,500</strong>. See the Unmatched Players section below for the full list.
+  </div>`;
+
+  const posColor={QB:'#4da6ff',RB:'#00c96a',WR:'#b388ff',TE:'#ffb347'};
+
+  const two=analyzed.filter(a=>a.sides.length===2);
+  const three=analyzed.filter(a=>a.sides.length>=3);
+
+  function buildTradeSection(list,limit=50){
+    return list.map((a,idx)=>{
+    // Cards beyond the limit are hidden by default but still in the DOM so search can find them
+    const overLimit=idx>=limit;
+    const {sides,diff,pctDiff,winnerRid,date,trade}=a;
+    const diffColor=pctDiff>=50?'#ff4545':pctDiff>=30?'#ff9040':pctDiff>=15?'#ffb347':'#00ff87';
+
+    // Collect all player names in this trade for search filtering
+    const allPlayerNames=sides.flatMap(s=>s.players.map(p=>p.name.toLowerCase())).join('|');
+
+    const sideHtml=sides.map(s=>{
+      const isWinner=s.rid===winnerRid&&sides.length===2;
+      const tc=getTeamColor(s.name);
+      const playerRows=s.players.map(p=>{
+        const pc=posColor[p.pos]||'var(--text-muted)';
+        const valColor=p.estimated?'#ffb347':'var(--text)';
+        const valDisplay=p.estimated?`1,500*`:(p.ktc>0?p.ktc.toLocaleString():'—');
+        return`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <div style="display:flex;align-items:center;gap:6px;min-width:0;">
+            ${p.pos?`<span style="font-family:'DM Mono',monospace;font-size:10px;color:${pc};min-width:22px">${p.pos}</span>`:''}
+            <span style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${p.estimated?'color:#ffb347':''}">${p.name}${p.estimated?' *':''}</span>
+          </div>
+          <span style="font-family:'DM Mono',monospace;font-size:12px;color:${valColor};flex-shrink:0">${valDisplay}</span>
+        </div>`;
+      }).join('');
+      const pickRows=s.picks.map(pk=>{
+        return`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-family:'DM Mono',monospace;font-size:10px;color:#ffb347;min-width:22px">PK</span>
+            <span style="font-size:13px;">${pk.label}${!pk.isSelf?` <span style="font-size:10px;color:var(--text-muted)">(via ${pk.origTeam})</span>`:''}</span>
+          </div>
+          <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted);flex-shrink:0">~${(pk.ktc/1000).toFixed(1)}k</span>
+        </div>`;
+      }).join('');
+      return`<div style="flex:1;min-width:0;padding:12px 14px;background:var(--bg3);border-radius:6px;border:1px solid ${isWinner?tc+'44':'var(--border)'};position:relative;">
+        ${isWinner?`<div style="position:absolute;top:8px;right:8px;font-family:'DM Mono',monospace;font-size:10px;background:${tc}22;color:${tc};border:1px solid ${tc}55;padding:2px 6px;border-radius:3px;">WON</div>`:''}
+        <div style="font-weight:600;font-size:14px;color:${tc};margin-bottom:8px;padding-right:${isWinner?'48px':'0'}">${s.name}</div>
+        <div style="margin-bottom:4px;">${playerRows}${pickRows}</div>
+        <div style="display:flex;align-items:baseline;justify-content:flex-end;gap:4px;border-top:1px solid var(--border);padding-top:6px;margin-top:6px;">
+          <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted)">total</span>
+          <span style="font-family:'DM Mono',monospace;font-size:16px;font-weight:600;color:${isWinner&&sides.length===2?tc:'var(--text)'}">${(s.total/1000).toFixed(1)}k</span>
+        </div>
+      </div>`;
+    }).join(`<div style="display:flex;align-items:center;justify-content:center;padding:0 6px;font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text-muted);flex-shrink:0;">↔</div>`);
+
+    return`<div class="ktc-trade-card" data-players="${allPlayerNames}" data-rank="${idx}" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px;${overLimit?'display:none':''}">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+        <span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--text-muted)">#${idx+1}</span>
+        <span style="font-family:'DM Mono',monospace;font-size:12px;background:${diffColor}18;color:${diffColor};border:1px solid ${diffColor}44;padding:2px 8px;border-radius:3px;">${pctDiff}% gap · ${(diff/1000).toFixed(1)}k difference</span>
+        <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);margin-left:auto">${date}${trade.season?' · '+trade.season:''}</span>
+      </div>
+      <div class="ktc-trade-sides" style="display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;">${sideHtml}</div>
+    </div>`;
+    }).join('');
+  }
+
+  const twoCards=buildTradeSection(two);
+  const threeCards=buildTradeSection(three);
+
+  const overflowNote=(total,limit)=>total>limit
+    ?`<div id="ktc-overflow-note" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);text-align:center;padding:12px;">Showing top ${limit} of ${total} trades by value gap · search to find any trade</div>`:'';
+
+  const twoContent=two.length
+    ?twoCards+overflowNote(two.length,50)
+    :`<div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--text-muted);padding:24px 0;text-align:center;">No 2-team trades found.</div>`;
+
+  const threeContent=three.length
+    ?`<div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);margin-bottom:14px;">Value gap is less definitive for multi-team deals — all sides shown for reference.</div>`+threeCards+overflowNote(three.length,50)
+    :`<div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--text-muted);padding:24px 0;text-align:center;">No 3-team trades found.</div>`;
+
+  const tradeTabs=`
+    <div style="display:flex;gap:6px;margin-bottom:16px;">
+      <button id="ktc-tab-two" onclick="switchKtcTradeTab('two')"
+        class="team-filter-btn active" style="height:32px;font-size:12px;padding:0 16px;">
+        2-Team Trades <span style="font-family:'DM Mono',monospace;font-size:10px;opacity:0.7;">(${two.length})</span>
+      </button>
+      <button id="ktc-tab-three" onclick="switchKtcTradeTab('three')"
+        class="team-filter-btn" style="height:32px;font-size:12px;padding:0 16px;">
+        3+ Team Trades <span style="font-family:'DM Mono',monospace;font-size:10px;opacity:0.7;">(${three.length})</span>
+      </button>
+    </div>
+    <div id="ktc-tab-two-content">${twoContent}</div>
+    <div id="ktc-tab-three-content" style="display:none;">${threeContent}</div>`;
+
+  container.innerHTML=summaryHtml+tradeTabs;
+}
+
+function switchKtcTradeTab(tab){
+  document.getElementById('ktc-tab-two')?.classList.toggle('active',tab==='two');
+  document.getElementById('ktc-tab-three')?.classList.toggle('active',tab==='three');
+  const twoEl=document.getElementById('ktc-tab-two-content');
+  const threeEl=document.getElementById('ktc-tab-three-content');
+  if(twoEl) twoEl.style.display=tab==='two'?'block':'none';
+  if(threeEl) threeEl.style.display=tab==='three'?'block':'none';
+  // Clear search when switching tabs and re-apply limit
+  const input=document.getElementById('ktc-player-search');
+  if(input){input.value='';filterKtcTrades('');}
+  const countEl=document.getElementById('ktc-search-count');
+  if(countEl) countEl.textContent='';
+}
+
+function filterKtcTrades(query){
+  const q=(query||'').toLowerCase().trim();
+  const cards=document.querySelectorAll('.ktc-trade-card');
+  let visible=0;
+  cards.forEach(card=>{
+    const players=card.dataset.players||'';
+    const rank=Number(card.dataset.rank||0);
+    const matches=!q||players.includes(q);
+    // When searching: show all matches regardless of rank limit
+    // When cleared: restore the default top-50 limit
+    card.style.display=matches&&(q||rank<50)?'':'none';
+    if(matches&&(q||rank<50)) visible++;
+  });
+  const countEl=document.getElementById('ktc-search-count');
+  const overflowNote=document.getElementById('ktc-overflow-note');
+  if(countEl) countEl.textContent=q?`${visible} trade${visible!==1?'s':''} found`:'';
+  if(overflowNote) overflowNote.style.display=q?'none':'';
+}
+
+function searchKtcPlayer(name){
+  // Scroll up to search box, fill it in, and filter
+  const input=document.getElementById('ktc-player-search');
+  if(!input) return;
+  input.value=name;
+  filterKtcTrades(name);
+  input.scrollIntoView({behavior:'smooth',block:'center'});
+  input.focus();
+}
+
 
 function setWaiverSubTab(tab){
   activeWaiverSubTab=tab==='faab'?'faab':'activity';
@@ -3380,6 +3757,122 @@ function getPlayerTeam(pid){
 function getPlayerPos(pid){
   const p=playerMap[pid];
   return p&&p.position?p.position:'';
+}
+
+/* ══════════════════════════════════════════════════════════
+   ROOKIE DRAFT BOOM / BUST
+══════════════════════════════════════════════════════════ */
+
+// Expected KTC value per pick slot.
+// 1.01 and 1.02 carry a premium. After 1.02, values taper slowly through 2.05,
+// then taper even more gradually from 2.06 all the way to 4.10 — keeping
+// consistency with the flat round values used in the KTC Trade Analysis.
+const DRAFT_PICK_EXPECTED = [
+  // R1: big step at 1.01→1.02, then steady ~175/pick decline
+  6500, 5750, 5250, 5075, 4900, 4725, 4550, 4375, 4200, 4025,
+  // R2 (1-5): slow taper continues ~175/pick from R1 end
+  3850, 3675, 3500, 3325, 3150,
+  // R2 (6-10) + R3 + R4: even slower ~55/pick decline
+  3100, 3050, 2990, 2930, 2875,  // 2.06–2.10
+  2825, 2765, 2710, 2650, 2600,  // 3.01–3.05
+  2540, 2485, 2425, 2375, 2315,  // 3.06–3.10
+  2260, 2200, 2150, 2090, 2035,  // 4.01–4.05
+  1980, 1925, 1870, 1810, 1755,  // 4.06–4.10
+  // R5: light taper
+  1700, 1650, 1600, 1550, 1500, 1450, 1400, 1350, 1300, 1250
+];
+
+function draftPickExpected(overallPick){
+  return DRAFT_PICK_EXPECTED[Math.min(overallPick-1, DRAFT_PICK_EXPECTED.length-1)]||100;
+}
+
+// Global KTC name lookup — strips all punctuation/spaces/suffixes
+function ktcLookupGlobal(name){
+  if(!name) return 0;
+  const strip=s=>s.toLowerCase().replace(/[^a-z0-9\s]/g,'').replace(/\b(jr|sr|ii|iii|iv|v)\b/g,'').replace(/\s+/g,'').trim();
+  const norm=strip(name);
+  for(const team of TEAMS){
+    for(const p of team.players){
+      if(p.ktc>0&&strip(p.name)===norm) return p.ktc;
+    }
+  }
+  // Try first+last only (drop middle initial)
+  const parts=name.toLowerCase().replace(/[^a-z0-9\s]/g,'').trim().split(/\s+/)
+    .filter(w=>!['jr','sr','ii','iii','iv','v'].includes(w));
+  if(parts.length>=3){
+    const fl=parts[0]+parts[parts.length-1];
+    for(const team of TEAMS){
+      for(const p of team.players){
+        if(p.ktc>0&&strip(p.name)===fl) return p.ktc;
+      }
+    }
+  }
+  return 0;
+}
+
+// picks: [{playerName, position, overallPick, round, slotInRound, team}]
+function renderBoomBust(picks){
+  const data=picks
+    .filter(p=>p.playerName&&!p.playerName.startsWith('Player ID'))
+    .map(p=>{
+      const current=ktcLookupGlobal(p.playerName);
+      const expected=draftPickExpected(p.overallPick);
+      const delta=current-expected;
+      const pctDelta=Math.round(delta/expected*100);
+      const slot=`${p.round}.${String(p.slotInRound).padStart(2,'0')}`;
+      return{...p,current,expected,delta,pctDelta,slot};
+    });
+
+  if(!data.length) return '';
+
+  const booms=[...data].sort((a,b)=>b.delta-a.delta).slice(0,5);
+  const busts=[...data].sort((a,b)=>a.delta-b.delta).slice(0,5);
+
+  const posColor={QB:'#4da6ff',RB:'#00c96a',WR:'#b388ff',TE:'#ffb347'};
+
+  function card(p,isBoom){
+    const tc=getTeamColor(p.team);
+    const pc=posColor[p.position]||'var(--text-muted)';
+    const deltaColor=isBoom?'#00ff87':'#ff4545';
+    const arrow=isBoom?'▲':'▼';
+    return`<div style="padding:12px 14px;background:var(--bg2);border:1px solid ${deltaColor}30;border-left:3px solid ${deltaColor};border-radius:6px;margin-bottom:8px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:14px;font-weight:600;">${p.playerName}</span>
+          <span style="font-family:'DM Mono',monospace;font-size:10px;background:${pc}18;color:${pc};border:1px solid ${pc}40;padding:1px 6px;border-radius:3px;">${p.position}</span>
+        </div>
+        <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">${p.slot}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">R${p.round} expected ${p.expected.toLocaleString()}</span>
+        <span style="color:var(--text-muted);">→</span>
+        <span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:600;">${p.current>0?p.current.toLocaleString():'—'}</span>
+        <span style="font-family:'DM Mono',monospace;font-size:12px;color:${deltaColor};margin-left:auto;">${arrow} ${Math.abs(p.delta).toLocaleString()} (${p.pctDelta>0?'+':''}${p.pctDelta}%)</span>
+      </div>
+      <div style="font-family:'DM Mono',monospace;font-size:10px;color:${tc};margin-top:4px;">${p.team}</div>
+    </div>`;
+  }
+
+  return`
+    <div style="margin-top:28px;border-top:1px solid var(--border);padding-top:20px;">
+      <div style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:var(--green);margin-bottom:16px;">KTC Value vs Draft Position</div>
+      <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);margin-bottom:16px;">Compares current KTC value against the expected value for each pick slot at draft time.</div>
+      <div class="boom-bust-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#00ff87;">🚀 Biggest Booms</span>
+          </div>
+          ${booms.map(p=>card(p,true)).join('')}
+        </div>
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#ff4545;">💀 Biggest Busts</span>
+          </div>
+          ${busts.map(p=>card(p,false)).join('')}
+        </div>
+      </div>
+      <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);margin-top:12px;">* Players not found in current KTC data show — and are excluded from rankings.</div>
+    </div>`;
 }
 
 function playerThumbUrl(pid){
@@ -3910,8 +4403,14 @@ function load2025DraftData(statusEl, wrapEl) {
         ${renderManualDraftRound(draftData.filter(p => p.round === 5))}
       </div>
     </div>
+    ${renderBoomBust(draftData.map(p=>({
+      playerName:p.player, position:p.position,
+      overallPick:p.pick, round:p.round,
+      slotInRound:p.pick-((p.round-1)*10),
+      team:p.team
+    })))}
   `;
-  
+
   wrapEl.innerHTML = html;
 }
 
@@ -4070,12 +4569,28 @@ function displayRookieDraftResults(picks, userMap, playerMap, year, statusEl, wr
     `;
   });
   
+  // Build normalized picks for boom/bust.
+  // Derive slotInRound from pick_no directly (not draft_slot, which is the team's
+  // original assigned slot and doesn't account for traded picks).
+  const numTeams=10;
+  const boomBustPicks=picks
+    .filter(p=>p.player_id&&playerMap[p.player_id]&&!playerMap[p.player_id].includes('Player ID'))
+    .map(p=>({
+      playerName: playerMap[p.player_id]||'',
+      position: p.metadata?.position||'',
+      overallPick: p.pick_no,
+      round: p.round,
+      slotInRound: p.pick_no-(p.round-1)*numTeams,
+      team: userMap[p.picked_by]||'Unknown'
+    }));
+
   html += `
         </div>
       </div>
+      <div style="padding:0 20px 20px;">${renderBoomBust(boomBustPicks)}</div>
     </div>
   `;
-  
+
   wrapEl.innerHTML = html;
 }
 
