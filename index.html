@@ -6454,16 +6454,27 @@ function setWaiverStatus(state,msg){
 async function initWaivers(){
   setWaiverStatus('loading','Loading waiver data...');
   try {
-    // Reuse rosterMap/userMap/playerMap if trades already loaded, else fetch
-    if(Object.keys(rosterMap).length===0){
-      const [uRes,rRes]=await Promise.all([
-        fetch(`${SLEEPER}/league/${ALL_LEAGUE_IDS[0].lid}/users`).then(r=>r.ok?r.json():[]).catch(()=>[]),
-        fetch(`${SLEEPER}/league/${ALL_LEAGUE_IDS[0].lid}/rosters`).then(r=>r.ok?r.json():[]).catch(()=>[])
-      ]);
-      if(Array.isArray(uRes)) uRes.forEach(u=>{if(u)userMap[u.user_id]=u.display_name||u.username;});
-      if(Array.isArray(rRes)) rRes.forEach(r=>{if(!r)return;rosterMap[r.roster_id]=userMap[r.owner_id]||`Team ${r.roster_id}`;});
-      if(Object.keys(rosterMap).length===0) TEAMS.forEach((t,i)=>{rosterMap[i+1]=t.name;});
-    }
+    // Always fetch rosters so we get waiver_budget_used directly from Sleeper
+    // (our transaction-based calculation misses off-season bids made in the prior league year)
+    const [uRes,rRes]=await Promise.all([
+      fetch(`${SLEEPER}/league/${ALL_LEAGUE_IDS[0].lid}/users`).then(r=>r.ok?r.json():[]).catch(()=>[]),
+      fetch(`${SLEEPER}/league/${ALL_LEAGUE_IDS[0].lid}/rosters`).then(r=>r.ok?r.json():[]).catch(()=>[])
+    ]);
+    if(Array.isArray(uRes)) uRes.forEach(u=>{if(u)userMap[u.user_id]=u.display_name||u.username;});
+    if(Array.isArray(rRes)) rRes.forEach(r=>{if(!r)return;rosterMap[r.roster_id]=userMap[r.owner_id]||`Team ${r.roster_id}`;});
+    if(Object.keys(rosterMap).length===0) TEAMS.forEach((t,i)=>{rosterMap[i+1]=t.name;});
+
+    // Build authoritative FAAB remaining from Sleeper's own waiver_budget_used field
+    const faabFromSleeper={};
+    const startingBudget=100;
+    if(Array.isArray(rRes)) rRes.forEach(r=>{
+      if(!r) return;
+      const name=rosterMap[r.roster_id];
+      if(!name) return;
+      const used=Number(r.settings?.waiver_budget_used||0);
+      const total=Number(r.settings?.waiver_budget||startingBudget);
+      faabFromSleeper[name]={used, total, remaining:total-used};
+    });
 
     // Fetch all transactions across all leagues
     const txSet=new Map();
@@ -6509,7 +6520,7 @@ async function initWaivers(){
       });
     });
 
-    renderFaabRemainingGrid(faabSpentCurrentSeason, 100, currentSeason);
+    renderFaabRemainingGrid(faabFromSleeper, currentSeason);
     renderFaabGrid(faabByTeam);
     renderFaabPlayerGrid(faabByPlayer);
     buildWaiverTeamFilter();
@@ -6561,24 +6572,17 @@ function renderFaabGrid(faabByTeam){
   }).join('');
 }
 
-function renderFaabRemainingGrid(faabSpentCurrentSeason, startingBudget=100, seasonLabel='2026'){
-  const teams=[...new Set(Object.values(rosterMap))].sort();
-  
-  // Debug budget calculation for austinsleight
-  const yourTeamName = 'austinsleight';
-  const yourSpent = faabSpentCurrentSeason[yourTeamName] || 0;
-  const yourRemaining = startingBudget - yourSpent;
-  console.log(`Budget Debug for ${yourTeamName}:`, {
-    spent: yourSpent,
-    remaining: yourRemaining,
-    startingBudget
-  });
-  
-  const rows=teams.map(name=>{
-    const spent=faabSpentCurrentSeason[name]||0;
-    const remaining=startingBudget-spent;
-    return {name, spent, remaining};
-  }).sort((a,b)=>b.remaining-a.remaining||a.name.localeCompare(b.name)); // Highest money left first
+function renderFaabRemainingGrid(faabFromSleeper, seasonLabel='2026'){
+  // faabFromSleeper: { teamName: {used, total, remaining} } — sourced directly from
+  // Sleeper's roster.settings.waiver_budget_used so it's always accurate.
+  const rows=Object.entries(faabFromSleeper)
+    .map(([name,{used,total,remaining}])=>({name,spent:used,total,remaining}))
+    .sort((a,b)=>b.remaining-a.remaining||a.name.localeCompare(b.name));
+
+  if(!rows.length){
+    document.getElementById('faab-remaining-grid').innerHTML='<div style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--text-muted);padding:12px;">No FAAB data available.</div>';
+    return;
+  }
 
   const max=Math.max(...rows.map(r=>Math.max(r.remaining,0)),1);
   document.getElementById('faab-remaining-grid').innerHTML=rows.map(r=>{
@@ -6587,7 +6591,7 @@ function renderFaabRemainingGrid(faabSpentCurrentSeason, startingBudget=100, sea
     return`<div class="metric" style="cursor:default">
       <div class="metric-label" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:${getTeamColor(r.name)}">${r.name}</div>
       <div class="metric-value" style="color:${color};font-size:24px">$${r.remaining}</div>
-      <div class="metric-sub">Spent $${r.spent} of $${startingBudget} · ${seasonLabel}</div>
+      <div class="metric-sub">Spent $${r.spent} of $${r.total} · ${seasonLabel}</div>
       <div style="height:3px;background:var(--bg3);border-radius:2px;margin-top:6px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${color};border-radius:2px"></div></div>
     </div>`;
   }).join('');
