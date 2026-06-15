@@ -2698,13 +2698,15 @@ async function initTeamRostersPanel(){
   teamRosterLoading=true;
   document.getElementById('team-roster-footer').textContent='Loading roster data from Sleeper...';
   try{
-    const [usersRes, rostersRes, playersRes, leagueRes, tradedPicksSets]=await Promise.all([
+    const [usersRes, rostersRes, playersRes, leagueRes, tradedPicksRaw]=await Promise.all([
       fetch(`${SLEEPER}/league/${ALL_LEAGUE_IDS[0].lid}/users`).then(r=>r.ok?r.json():[]).catch(()=>[]),
       fetch(`${SLEEPER}/league/${ALL_LEAGUE_IDS[0].lid}/rosters`).then(r=>r.ok?r.json():[]).catch(()=>[]),
       Object.keys(playerMap).length?Promise.resolve(playerMap):fetch(`${SLEEPER}/players/nfl`).then(r=>r.ok?r.json():{}).catch(()=>({})),
       fetch(`${SLEEPER}/league/${ALL_LEAGUE_IDS[0].lid}`).then(r=>r.ok?r.json():null).catch(()=>null),
-      Promise.all(ALL_LEAGUE_IDS.map(({lid})=>fetch(`${SLEEPER}/league/${lid}/traded_picks`).then(r=>r.ok?r.json():[]).catch(()=>[])))
+      // Only use current season league — prior years have stale pick ownership that overwrites current trades
+      fetch(`${SLEEPER}/league/${ALL_LEAGUE_IDS[0].lid}/traded_picks`).then(r=>r.ok?r.json():[]).catch(()=>[])
     ]);
+    const tradedPicksSets = [tradedPicksRaw];
     if(playersRes&&Object.keys(playersRes).length) playerMap=playersRes;
     const settings=leagueRes?.settings||{};
     const parsedLimit=Number(settings.roster_size||0);
@@ -2739,15 +2741,6 @@ async function initTeamRostersPanel(){
     const tradedPicks=(tradedPicksSets||[]).flat().filter(Boolean);
     const rosterIds=sleeperTeamRosters.map(r=>Number(r.roster_id)).filter(Number.isFinite);
     
-    console.log('Traded picks debug:', {
-      tradedPicksCount: tradedPicks.length,
-      sampleTradedPicks: tradedPicks.slice(0, 5),
-      rosterIds: rosterIds,
-      userIdToRosterId: userIdToRosterId,
-      userIdToRosterIdKeys: Object.keys(userIdToRosterId),
-      userIdToRosterIdValues: Object.values(userIdToRosterId)
-    });
-    
     // Process traded picks to determine current ownership
     const pickIndex={};
     tradedPicks.forEach(p=>{
@@ -2763,18 +2756,6 @@ async function initTeamRostersPanel(){
           const key=`${season}-${origRid}-${round}`;
           const currentOwnerRid=Number.isFinite(pickIndex[key])?pickIndex[key]:origRid;
           
-          // Debug first few assignments
-          if (totalAssignments < 10) {
-            console.log(`Pick assignment debug:`, {
-              key,
-              season,
-              origRid,
-              round,
-              currentOwnerRid,
-              hasTeamRosterPicks: !!teamRosterPicksByOwner[currentOwnerRid]
-            });
-          }
-          
           if(currentOwnerRid && teamRosterPicksByOwner[currentOwnerRid]){
             teamRosterPicksByOwner[currentOwnerRid].push({
               season: String(season),
@@ -2787,9 +2768,6 @@ async function initTeamRostersPanel(){
       });
     });
     
-    console.log('Final pick counts:', Object.keys(teamRosterPicksByOwner).map(k => `${k}: ${teamRosterPicksByOwner[k]?.length || 0} picks`));
-    console.log('Total assignments made:', totalAssignments);
-
     const select=document.getElementById('team-roster-select');
     if(select){
       select.innerHTML=sleeperTeamRosters.map((r,i)=>`<option value="${i}">${r.teamName}</option>`).join('');
@@ -5780,12 +5758,12 @@ async function initPicks(){
   document.getElementById('picks-status').textContent='Loading traded picks from Sleeper...';
 
   try {
-    // Fetch traded_picks from all leagues
+    // Only fetch traded_picks from the current season league — prior league years contain
+    // stale picks for seasons that have already been drafted (e.g. 2026 from the 2025 league).
+    const currentLeague = ALL_LEAGUE_IDS[0];
     const allPicks = [];
-    for(const {lid,season} of ALL_LEAGUE_IDS){
-      const r = await fetch(`${SLEEPER}/league/${lid}/traded_picks`).then(r=>r.ok?r.json():[]).catch(()=>[]);
-      if(Array.isArray(r)) r.forEach(p=>{ if(p) allPicks.push({...p, leagueSeason:season}); });
-    }
+    const r = await fetch(`${SLEEPER}/league/${currentLeague.lid}/traded_picks`).then(r=>r.ok?r.json():[]).catch(()=>[]);
+    if(Array.isArray(r)) r.forEach(p=>{ if(p) allPicks.push({...p, leagueSeason:currentLeague.season}); });
 
     // Also get rosters for current league if not loaded
     if(Object.keys(rosterMap).length===0){
@@ -5807,7 +5785,9 @@ async function initPicks(){
 
 function renderPicksTracker(picks){
   // Group by season then round, show current owner
-  const seasons = ['2026','2027','2028','2029'].filter(s=>picks.some(p=>p.season===s));
+  // Only show future seasons — 2026 rookie draft has already happened
+  const currentLeagueSeason = Number(ALL_LEAGUE_IDS[0]?.season || '2026');
+  const seasons = ['2027','2028','2029','2030'].filter(s=>Number(s)>currentLeagueSeason&&picks.some(p=>p.season===s));
   const rounds = [1,2,3,4];
   const roundNames = {1:'1st',2:'2nd',3:'3rd',4:'4th'};
   const roundColors = {1:'#ffb347',2:'#4da6ff',3:'#b388ff',4:'var(--text-dim)'};
