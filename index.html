@@ -3278,7 +3278,13 @@ function renderRoster(){
   data=[...data].filter(p => p.ktc > 0).sort((a,b)=>sort==='ktc'?b.ktc-a.ktc:sort==='name'?a.name.localeCompare(b.name):a.pos.localeCompare(b.pos));
   const maxK=Math.max(...data.map(p=>p.ktc),1);
   const tbody=document.getElementById('roster-tbody');
-  if(!data.length){tbody.innerHTML=`<tr><td colspan="5" style="text-align:center;padding:36px;color:var(--text-muted);font-family:'DM Mono',monospace">No players.</td></tr>`;return;}
+  if(!data.length){
+    tbody.innerHTML=`<tr><td colspan="5" style="text-align:center;padding:36px;color:var(--text-muted);font-family:'DM Mono',monospace">No players.</td></tr>`;
+    const allPlayers=TEAMS[rosterTeamIdx].players.filter(p=>p.ktc>0);
+    const allIR=allPlayers.filter(p=>p.ir).length;
+    document.getElementById('roster-count').textContent=allIR?`${allPlayers.length-allIR} players (${allIR} IR)`:`${allPlayers.length} players`;
+    return;
+  }
   tbody.innerHTML=data.map((p,i)=>{
     const pct=p.ktc?Math.round((p.ktc/maxK)*100):0,tier=getTier(p.ktc),bc=barColor(p.ktc);
     const irBadge=p.ir?` <span style="font-family:'DM Mono',monospace;font-size:9px;background:#ff4444;color:#fff;padding:1px 4px;border-radius:3px;vertical-align:middle;margin-left:4px">IR</span>`:'';
