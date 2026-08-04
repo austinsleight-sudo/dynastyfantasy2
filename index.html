@@ -4330,11 +4330,10 @@ function renderTeamRosterView(){
   const totalPlayers=allPlayers.length;
   const irCount=reserve.length;
   const activeCount=totalPlayers-irCount;
-  const activeLimit=teamRosterLimit-irCount; // limit excluding IR slot
-  const overLimit=activeCount>activeLimit;
+  const overLimit=activeCount>teamRosterLimit;
   const upcomingSeason=ALL_LEAGUE_IDS[0]?.season||'2026';
   const taxiEligibleCount=allPlayers.filter(pid=>isTaxiEligible(pid, upcomingSeason)).length;
-  const rosterCountDisplay=irCount?`${activeCount}/${activeLimit} <span style="font-size:14px;color:var(--text-muted)">(${irCount} IR)</span>`:`${activeCount}/${activeLimit}`;
+  const rosterCountDisplay=irCount?`${activeCount}/${teamRosterLimit} <span style="font-size:14px;color:var(--text-muted)">(${irCount} IR)</span>`:`${activeCount}/${teamRosterLimit}`;
   document.getElementById('team-roster-metrics').innerHTML=`
     <div class="metric"><div class="metric-label">Team</div><div class="metric-value" style="font-size:24px;color:${getTeamColor(roster.teamName)}">${roster.teamName}</div><div class="metric-sub">Sleeper roster</div></div>
     <div class="metric"><div class="metric-label">Roster Count</div><div class="metric-value" style="color:${overLimit?'#ff5555':'var(--green)'}">${rosterCountDisplay}</div><div class="metric-sub">${overLimit?'over limit':'at/under limit'}</div></div>
